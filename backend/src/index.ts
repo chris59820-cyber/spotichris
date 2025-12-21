@@ -11,6 +11,7 @@ import { uploadRoutes } from './routes/upload.routes'
 import { favoritesRoutes } from './routes/favorites.routes'
 import { playlistRoutes } from './routes/playlist.routes'
 import carplayRoutes from './routes/carplay.routes'
+import { adminRoutes } from './routes/admin.routes'
 import { checkDatabaseSetup } from './utils/check-db'
 import { webSocketService } from './services/websocket.service'
 
@@ -61,6 +62,7 @@ app.use('/api/upload', uploadRoutes)
 app.use('/api/favorites', favoritesRoutes)
 app.use('/api/playlists', playlistRoutes)
 app.use('/api/carplay', carplayRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Health check
 app.get('/health', (req, res) => {

@@ -44,13 +44,15 @@ const PlayerBar: React.FC = () => {
   const videoPlayerContainerStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: 0,
-    left: 0,
+    right: 0, // Changé de left: 0 à right: 0 pour positionner à droite
+    left: 'auto', // S'assurer que left n'est pas défini
     width: currentlyPlaying?.type === 'video' && !isVideoMinimized ? getVideoWidth() : '320px',
     height: isCinemaMode ? '100vh' : isVideoMinimized ? 'auto' : `${videoHeight}px`,
     maxHeight: isCinemaMode ? '100vh' : '90vh',
     backgroundColor: theme.colors.bgSecondary,
     borderTop: `1px solid ${theme.colors.borderPrimary}`,
-    borderRight: isCinemaMode ? 'none' : `1px solid ${theme.colors.borderPrimary}`,
+    borderLeft: isCinemaMode ? 'none' : `1px solid ${theme.colors.borderPrimary}`, // Changé de borderRight à borderLeft
+    borderRight: 'none', // Pas de bordure à droite maintenant
     zIndex: isCinemaMode ? theme.zIndex.modal : theme.zIndex.fixed + 1,
     transition: theme.transitions.base,
     boxShadow: theme.shadows.lg,
@@ -97,13 +99,13 @@ const PlayerBar: React.FC = () => {
         )}
         <div style={videoPlayerContainerStyle}>
           <div style={{ position: 'relative', width: '100%', height: '100%', flex: 1, overflow: 'hidden' }}>
-            {/* Resize handle - horizontal (right side) */}
+            {/* Resize handle - horizontal (left side maintenant que le lecteur est à droite) */}
             {!isVideoMinimized && !isCinemaMode && (
               <div
                 style={{
                   position: 'absolute',
                   top: 0,
-                  right: 0,
+                  left: 0, // Changé de right: 0 à left: 0
                   width: '20px',
                   height: '100%',
                   cursor: 'ew-resize',
@@ -126,7 +128,7 @@ const PlayerBar: React.FC = () => {
                   const startWidth = parseInt(getVideoWidth(), 10)
                   
                   const handleMouseMove = (moveEvent: MouseEvent) => {
-                    const diff = moveEvent.clientX - startX
+                    const diff = startX - moveEvent.clientX // Inversé car on redimensionne depuis la gauche
                     const newWidth = Math.max(400, Math.min(1200, startWidth + diff))
                     // Convert to size category
                     if (newWidth <= 500) {
@@ -166,8 +168,8 @@ const PlayerBar: React.FC = () => {
                 style={{
                   position: 'absolute',
                   top: 0,
-                  left: 0,
-                  right: '20px', // Leave space for horizontal resize handle
+                  left: '20px', // Leave space for horizontal resize handle (maintenant à gauche)
+                  right: 0,
                   height: '20px',
                   cursor: 'ns-resize',
                   zIndex: 15,
@@ -187,18 +189,18 @@ const PlayerBar: React.FC = () => {
                   e.preventDefault()
                   const startY = e.clientY
                   const startHeight = videoHeight
-                  
+
                   const handleMouseMove = (moveEvent: MouseEvent) => {
                     const diff = startY - moveEvent.clientY // Inverted because we're dragging up
                     const newHeight = Math.max(300, Math.min(window.innerHeight - 100, startHeight + diff))
                     setVideoHeight(newHeight)
                   }
-                  
+
                   const handleMouseUp = () => {
                     document.removeEventListener('mousemove', handleMouseMove)
                     document.removeEventListener('mouseup', handleMouseUp)
                   }
-                  
+
                   document.addEventListener('mousemove', handleMouseMove)
                   document.addEventListener('mouseup', handleMouseUp)
                 }}
@@ -216,16 +218,16 @@ const PlayerBar: React.FC = () => {
               </div>
             )}
 
-            {/* Resize handle - corner (top-right) for diagonal resize */}
+            {/* Resize handle - corner (top-left maintenant que le lecteur est à droite) for diagonal resize */}
             {!isVideoMinimized && !isCinemaMode && (
               <div
                 style={{
                   position: 'absolute',
                   top: 0,
-                  right: 0,
+                  left: 0, // Changé de right: 0 à left: 0
                   width: '20px',
                   height: '20px',
-                  cursor: 'nwse-resize',
+                  cursor: 'nesw-resize', // Changé de nwse-resize à nesw-resize pour le coin gauche
                   zIndex: 16,
                   display: 'flex',
                   alignItems: 'center',
@@ -245,11 +247,11 @@ const PlayerBar: React.FC = () => {
                   const startY = e.clientY
                   const startWidth = parseInt(getVideoWidth(), 10)
                   const startHeight = videoHeight
-                  
+
                   const handleMouseMove = (moveEvent: MouseEvent) => {
-                    const diffX = moveEvent.clientX - startX
+                    const diffX = startX - moveEvent.clientX // Inversé car on redimensionne depuis la gauche
                     const diffY = startY - moveEvent.clientY // Inverted for height
-                    
+
                     // Update width
                     const newWidth = Math.max(400, Math.min(1200, startWidth + diffX))
                     if (newWidth <= 500) {
@@ -259,17 +261,17 @@ const PlayerBar: React.FC = () => {
                     } else {
                       setVideoSize('large')
                     }
-                    
+
                     // Update height
                     const newHeight = Math.max(300, Math.min(window.innerHeight - 100, startHeight + diffY))
                     setVideoHeight(newHeight)
                   }
-                  
+
                   const handleMouseUp = () => {
                     document.removeEventListener('mousemove', handleMouseMove)
                     document.removeEventListener('mouseup', handleMouseUp)
                   }
-                  
+
                   document.addEventListener('mousemove', handleMouseMove)
                   document.addEventListener('mouseup', handleMouseUp)
                 }}
@@ -291,7 +293,8 @@ const PlayerBar: React.FC = () => {
               style={{
                 position: 'absolute',
                 top: theme.spacing.xs,
-                right: isVideoMinimized || isCinemaMode ? theme.spacing.xs : '30px',
+                left: isVideoMinimized || isCinemaMode ? theme.spacing.xs : '30px', // Changé de right à left
+                right: 'auto',
                 zIndex: 10,
                 display: 'flex',
                 gap: theme.spacing.xs,
@@ -312,63 +315,74 @@ const PlayerBar: React.FC = () => {
                 {isVideoMinimized ? '⬆️' : '⬇️'}
               </Button>
             </div>
-            {!isVideoMinimized && (
-              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <VideoPlayerMini
-                  video={{
-                    id: currentlyPlaying.media.id,
-                    title: currentlyPlaying.media.title,
-                    description: currentlyPlaying.media.description,
-                    url: currentlyPlaying.media.url || '',
-                    duration: currentlyPlaying.media.duration,
-                    thumbnail_url: currentlyPlaying.media.thumbnail_url,
-                  }}
-                  videoSize={videoSize}
-                  isCinemaMode={isCinemaMode}
-                  onCinemaMode={() => setIsCinemaMode(!isCinemaMode)}
-                  onResize={() => {
-                    const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
-                    const currentIndex = sizes.indexOf(videoSize)
-                    const nextIndex = (currentIndex + 1) % sizes.length
-                    setVideoSize(sizes[nextIndex])
-                  }}
-                />
+            <div 
+              style={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                visibility: isVideoMinimized ? 'hidden' : 'visible',
+                position: isVideoMinimized ? 'absolute' : 'relative',
+                width: isVideoMinimized ? '1px' : '100%',
+                height: isVideoMinimized ? '1px' : 'auto',
+                opacity: isVideoMinimized ? 0 : 1,
+                pointerEvents: isVideoMinimized ? 'none' : 'auto',
+              }}
+            >
+              <VideoPlayerMini
+                video={{
+                  id: currentlyPlaying.media.id,
+                  title: currentlyPlaying.media.title,
+                  description: currentlyPlaying.media.description,
+                  url: currentlyPlaying.media.url || '',
+                  duration: currentlyPlaying.media.duration,
+                  thumbnail_url: currentlyPlaying.media.thumbnail_url,
+                }}
+                videoSize={videoSize}
+                isCinemaMode={isCinemaMode}
+                onCinemaMode={() => setIsCinemaMode(!isCinemaMode)}
+                onResize={() => {
+                  const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
+                  const currentIndex = sizes.indexOf(videoSize)
+                  const nextIndex = (currentIndex + 1) % sizes.length
+                  setVideoSize(sizes[nextIndex])
+                }}
+              />
+              <div
+                style={{
+                  padding: theme.spacing.sm,
+                  backgroundColor: theme.colors.bgTertiary,
+                  flexShrink: 0,
+                }}
+              >
                 <div
                   style={{
-                    padding: theme.spacing.sm,
-                    backgroundColor: theme.colors.bgTertiary,
-                    flexShrink: 0,
+                    fontSize: theme.fontSizes.sm,
+                    fontWeight: 600,
+                    color: theme.colors.textPrimary,
+                    marginBottom: theme.spacing.xs,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
+                  {currentlyPlaying.media.title}
+                </div>
+                {currentlyPlaying.media.description && (
                   <div
                     style={{
-                      fontSize: theme.fontSizes.sm,
-                      fontWeight: 600,
-                      color: theme.colors.textPrimary,
-                      marginBottom: theme.spacing.xs,
+                      fontSize: theme.fontSizes.xs,
+                      color: theme.colors.textSecondary,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {currentlyPlaying.media.title}
+                    {currentlyPlaying.media.description}
                   </div>
-                  {currentlyPlaying.media.description && (
-                    <div
-                      style={{
-                        fontSize: theme.fontSizes.xs,
-                        color: theme.colors.textSecondary,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {currentlyPlaying.media.description}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            )}
+            </div>
             {isVideoMinimized && (
               <div
                 style={{
@@ -396,22 +410,22 @@ const PlayerBar: React.FC = () => {
     return <PlayerBarFull />
   }
 
-  // Video player - utiliser aussi la nouvelle barre complète en bas, mais garder le mini player en bas à gauche
+  // Video player - utiliser aussi la nouvelle barre complète en bas, mais garder le mini player en bas à droite
   if (currentlyPlaying.type === 'video') {
     return (
       <>
-        {/* Mini player vidéo en bas à gauche */}
+        {/* Mini player vidéo en bas à droite */}
         <div style={videoPlayerContainerStyle}>
           <div style={{ position: 'relative', width: '100%', height: '100%', flex: 1, overflow: 'hidden' }}>
             {/* Resize handles - code existant */}
             {!isVideoMinimized && !isCinemaMode && (
               <>
-                {/* Resize handle - horizontal (right side) */}
+                {/* Resize handle - horizontal (left side maintenant que le lecteur est à droite) */}
                 <div
                   style={{
                     position: 'absolute',
                     top: 0,
-                    right: 0,
+                    left: 0, // Changé de right: 0 à left: 0
                     width: '20px',
                     height: '100%',
                     cursor: 'ew-resize',
@@ -434,7 +448,7 @@ const PlayerBar: React.FC = () => {
                     const startWidth = parseInt(getVideoWidth(), 10)
                     
                     const handleMouseMove = (moveEvent: MouseEvent) => {
-                      const diff = moveEvent.clientX - startX
+                      const diff = startX - moveEvent.clientX // Inversé car on redimensionne depuis la gauche
                       const newWidth = Math.max(400, Math.min(1200, startWidth + diff))
                       if (newWidth <= 500) {
                         setVideoSize('small')
@@ -471,8 +485,8 @@ const PlayerBar: React.FC = () => {
                   style={{
                     position: 'absolute',
                     top: 0,
-                    left: 0,
-                    right: '20px',
+                    left: '20px', // Leave space for horizontal resize handle (maintenant à gauche)
+                    right: 0,
                     height: '20px',
                     cursor: 'ns-resize',
                     zIndex: 15,
@@ -520,15 +534,15 @@ const PlayerBar: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Resize handle - corner */}
+                {/* Resize handle - corner (top-left maintenant que le lecteur est à droite) */}
                 <div
                   style={{
                     position: 'absolute',
                     top: 0,
-                    right: 0,
+                    left: 0, // Changé de right: 0 à left: 0
                     width: '20px',
                     height: '20px',
-                    cursor: 'nwse-resize',
+                    cursor: 'nesw-resize', // Changé de nwse-resize à nesw-resize pour le coin gauche
                     zIndex: 16,
                     display: 'flex',
                     alignItems: 'center',
@@ -550,7 +564,7 @@ const PlayerBar: React.FC = () => {
                     const startHeight = videoHeight
                     
                     const handleMouseMove = (moveEvent: MouseEvent) => {
-                      const diffX = moveEvent.clientX - startX
+                      const diffX = startX - moveEvent.clientX // Inversé car on redimensionne depuis la gauche
                       const diffY = startY - moveEvent.clientY
                       
                       const newWidth = Math.max(400, Math.min(1200, startWidth + diffX))
@@ -593,7 +607,8 @@ const PlayerBar: React.FC = () => {
               style={{
                 position: 'absolute',
                 top: theme.spacing.xs,
-                right: isVideoMinimized || isCinemaMode ? theme.spacing.xs : '30px',
+                left: isVideoMinimized || isCinemaMode ? theme.spacing.xs : '30px', // Changé de right à left
+                right: 'auto',
                 zIndex: 10,
                 display: 'flex',
                 gap: theme.spacing.xs,
@@ -614,29 +629,40 @@ const PlayerBar: React.FC = () => {
                 {isVideoMinimized ? '⬆️' : '⬇️'}
               </Button>
             </div>
-            {!isVideoMinimized && (
-              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <VideoPlayerMini
-                  video={{
-                    id: currentlyPlaying.media.id,
-                    title: currentlyPlaying.media.title,
-                    description: currentlyPlaying.media.description,
-                    url: currentlyPlaying.media.url || '',
-                    duration: currentlyPlaying.media.duration,
-                    thumbnail_url: currentlyPlaying.media.thumbnail_url,
-                  }}
-                  videoSize={videoSize}
-                  isCinemaMode={isCinemaMode}
-                  onCinemaMode={() => setIsCinemaMode(!isCinemaMode)}
-                  onResize={() => {
-                    const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
-                    const currentIndex = sizes.indexOf(videoSize)
-                    const nextIndex = (currentIndex + 1) % sizes.length
-                    setVideoSize(sizes[nextIndex])
-                  }}
-                />
-              </div>
-            )}
+            <div 
+              style={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                visibility: isVideoMinimized ? 'hidden' : 'visible',
+                position: isVideoMinimized ? 'absolute' : 'relative',
+                width: isVideoMinimized ? '1px' : '100%',
+                height: isVideoMinimized ? '1px' : 'auto',
+                opacity: isVideoMinimized ? 0 : 1,
+                pointerEvents: isVideoMinimized ? 'none' : 'auto',
+              }}
+            >
+              <VideoPlayerMini
+                video={{
+                  id: currentlyPlaying.media.id,
+                  title: currentlyPlaying.media.title,
+                  description: currentlyPlaying.media.description,
+                  url: currentlyPlaying.media.url || '',
+                  duration: currentlyPlaying.media.duration,
+                  thumbnail_url: currentlyPlaying.media.thumbnail_url,
+                }}
+                videoSize={videoSize}
+                isCinemaMode={isCinemaMode}
+                onCinemaMode={() => setIsCinemaMode(!isCinemaMode)}
+                onResize={() => {
+                  const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
+                  const currentIndex = sizes.indexOf(videoSize)
+                  const nextIndex = (currentIndex + 1) % sizes.length
+                  setVideoSize(sizes[nextIndex])
+                }}
+              />
+            </div>
             {isVideoMinimized && (
               <div
                 style={{

@@ -4,6 +4,8 @@ export type MediaType = 'music' | 'video'
 
 export type VideoCategory = 'Cinéma' | 'Série' | 'Documentaire' | 'Musique' | 'Sport'
 
+export type VideoGenre = 'Action' | 'Animation' | 'Arts martiaux' | 'Aventure' | 'Biopic' | 'Comédie' | 'Comédie dramatique' | 'Comédie romantique' | 'Documentaire' | 'Drame' | 'Espionnage' | 'Fantastique' | 'Film musical' | 'Guerre' | 'Horreur' | 'Paranormal' | 'Policier' | 'Romance' | 'Science-fiction' | 'Sitcom' | 'Super-héros' | 'Thriller' | 'Thriller politique' | 'Thriller psychologique' | 'Western'
+
 export type MusicCategory = 'Pop' | 'Rock' | 'Jazz' | 'Classique' | 'Hip-Hop' | 'Électronique' | 'Rap' | 'R&B' | 'Country' | 'Reggae' | 'Metal' | 'Blues' | 'Folk' | 'World' | 'Autre'
 
 export interface Media {
@@ -17,6 +19,7 @@ export interface Media {
   url?: string
   thumbnail_url?: string
   video_category?: VideoCategory
+  genre?: VideoGenre
   music_category?: MusicCategory
   created_at: Date
   updated_at: Date
@@ -32,6 +35,7 @@ export interface CreateMediaData {
   url?: string
   thumbnail_url?: string
   video_category?: VideoCategory
+  genre?: VideoGenre
 }
 
 export interface UpdateMediaData {
@@ -43,14 +47,15 @@ export interface UpdateMediaData {
   url?: string
   thumbnail_url?: string
   video_category?: VideoCategory
+  genre?: VideoGenre
   music_category?: MusicCategory
 }
 
 export class MediaModel {
   static async create(data: CreateMediaData): Promise<Media> {
     const result = await pool.query(
-      `INSERT INTO media (title, description, artist, album, duration, type, url, thumbnail_url, video_category, music_category, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      `INSERT INTO media (title, description, artist, album, duration, type, url, thumbnail_url, video_category, genre, music_category, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
        RETURNING *`,
       [
         data.title,
@@ -62,6 +67,7 @@ export class MediaModel {
         data.url || null,
         data.thumbnail_url || null,
         data.video_category || null,
+        data.genre || null,
         data.music_category || null,
       ]
     )
@@ -182,6 +188,10 @@ export class MediaModel {
     if (data.video_category !== undefined) {
       updates.push(`video_category = $${paramIndex++}`)
       values.push(data.video_category || null)
+    }
+    if (data.genre !== undefined) {
+      updates.push(`genre = $${paramIndex++}`)
+      values.push(data.genre || null)
     }
     if (data.music_category !== undefined) {
       updates.push(`music_category = $${paramIndex++}`)

@@ -7,6 +7,7 @@ import { useCrossfade } from '../../hooks/useCrossfade'
 import { useEqualizer } from '../../hooks/useEqualizer'
 import { useCarMode } from '../../hooks/useCarMode'
 import { useSmartSpeakers } from '../../hooks/useSmartSpeakers'
+import { normalizeMediaUrl } from '../../utils/urlUtils'
 import Equalizer from '../audio/Equalizer'
 import CarModeOverlay from '../audio/CarModeOverlay'
 import Button from '../ui/Button'
@@ -90,20 +91,21 @@ const PlayerBarFull: React.FC = () => {
   }, [currentlyPlaying?.media.id, crossfadeEnabled])
   
   // Initialiser l'égaliseur quand l'élément audio change (une seule fois)
-  useEffect(() => {
-    if (audioRef.current && audioContextRef.current && currentlyPlaying?.type === 'audio') {
-      // Vérifier si l'égaliseur n'a pas déjà été initialisé pour cet élément
-      const isInitialized = audioRef.current.getAttribute('data-equalizer-initialized') === 'true'
-      if (!isInitialized) {
-        try {
-          equalizer.initialize(audioRef.current)
-        } catch (error) {
-          // Ignorer les erreurs de double connexion
-          console.warn('Equalizer initialization warning:', error)
-        }
-      }
-    }
-  }, [currentlyPlaying?.media.id, equalizer])
+  // DÉSACTIVÉ TEMPORAIREMENT pour déboguer le problème de son
+  // useEffect(() => {
+  //   if (audioRef.current && audioContextRef.current && currentlyPlaying?.type === 'audio') {
+  //     // Vérifier si l'égaliseur n'a pas déjà été initialisé pour cet élément
+  //     const isInitialized = audioRef.current.getAttribute('data-equalizer-initialized') === 'true'
+  //     if (!isInitialized) {
+  //       try {
+  //         equalizer.initialize(audioRef.current)
+  //       } catch (error) {
+  //         // Ignorer les erreurs de double connexion
+  //         console.warn('Equalizer initialization warning:', error)
+  //       }
+  //     }
+  //   }
+  // }, [currentlyPlaying?.media.id, equalizer])
 
   // Charger le statut favori
   useEffect(() => {
@@ -131,6 +133,10 @@ const PlayerBarFull: React.FC = () => {
       return
     }
 
+    // Normaliser l'URL pour utiliser le proxy Vite
+    const fullUrl = normalizeMediaUrl(currentUrl)
+    console.log('Audio URL conversion:', currentUrl, '->', fullUrl)
+
     // Normaliser l'URL pour la comparaison
     const normalizeUrl = (url: string) => {
       try {
@@ -145,20 +151,49 @@ const PlayerBarFull: React.FC = () => {
       }
     }
 
-    const currentNormalizedUrl = normalizeUrl(currentUrl)
+    const currentNormalizedUrl = normalizeUrl(fullUrl)
     const audioNormalizedUrl = audio.src ? normalizeUrl(audio.src) : ''
     
     // Vérifier si l'URL a changé
     if (audioNormalizedUrl !== currentNormalizedUrl) {
       // Nouveau média, charger
-      audio.src = currentUrl
+      console.log('Loading audio:', fullUrl)
+      console.log('Audio element:', audio)
+      console.log('Audio readyState before load:', audio.readyState)
+      
+      // Réinitialiser l'élément audio
+      audio.pause()
+      audio.src = ''
       audio.load()
+      
+      // Attendre un peu avant de charger la nouvelle source
+      setTimeout(() => {
+        audio.src = fullUrl
+        audio.load()
+        console.log('Audio src set to:', fullUrl)
+        console.log('Audio readyState after load:', audio.readyState)
+        
+        // Vérifier si le fichier est accessible
+        fetch(fullUrl, { method: 'HEAD' })
+          .then((response) => {
+            console.log('Audio file accessibility check:', response.status, response.ok)
+            if (!response.ok) {
+              console.error('Audio file not accessible:', response.status, response.statusText)
+            }
+          })
+          .catch((error) => {
+            console.error('Error checking audio file accessibility:', error)
+          })
+      }, 100)
     }
 
     // Gérer la lecture
     if (isPlaying) {
       const playAudio = () => {
-        audio.play().catch((error) => {
+        console.log('Attempting to play audio:', fullUrl, 'readyState:', audio.readyState, 'volume:', audio.volume)
+        audio.play().then(() => {
+          console.log('Audio playing successfully')
+        }).catch((error) => {
           console.error('Error playing audio:', error)
           updateIsPlaying(false)
         })
@@ -170,6 +205,7 @@ const PlayerBarFull: React.FC = () => {
       } else {
         // Attendre que le média soit prêt
         const handleCanPlay = () => {
+          console.log('Audio can play, starting playback')
           playAudio()
           audio.removeEventListener('canplay', handleCanPlay)
           audio.removeEventListener('loadeddata', handleCanPlay)
@@ -181,22 +217,56 @@ const PlayerBarFull: React.FC = () => {
       audio.pause()
     }
 
-    audio.volume = volume
+    // S'assurer que le volume est correctement défini et que l'audio n'est pas muet
+    const finalVolume = volume > 0 ? volume : 0.5
+    if (audio.volume !== finalVolume) {
+      console.log('Setting audio volume to:', finalVolume)
+      audio.volume = finalVolume
+      if (volume === 0) {
+        setVolume(0.5)
+      }
+    }
+    
+    // S'assurer que l'audio n'est pas muet
+    if (audio.muted) {
+      console.warn('Audio is muted, unmuting')
+      audio.muted = false
+    }
 
     const handleTimeUpdate = () => updateTime(audio.currentTime)
-    const handleLoadedMetadata = () => updateDuration(audio.duration || 0)
+    const handleLoadedMetadata = () => {
+      console.log('Audio metadata loaded, duration:', audio.duration)
+      updateDuration(audio.duration || 0)
+    }
     const handleEnded = () => {
       updateIsPlaying(false)
       updateTime(0)
     }
-    const handlePlay = () => updateIsPlaying(true)
-    const handlePause = () => updateIsPlaying(false)
+    const handlePlay = () => {
+      console.log('Audio play event fired')
+      updateIsPlaying(true)
+    }
+    const handlePause = () => {
+      console.log('Audio pause event fired')
+      updateIsPlaying(false)
+    }
+    const handleError = (e: Event) => {
+      console.error('Audio element error:', e, audio.error)
+      if (audio.error) {
+        console.error('Audio error details:', {
+          code: audio.error.code,
+          message: audio.error.message,
+        })
+      }
+      updateIsPlaying(false)
+    }
 
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('play', handlePlay)
     audio.addEventListener('pause', handlePause)
+    audio.addEventListener('error', handleError)
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate)
@@ -204,8 +274,9 @@ const PlayerBarFull: React.FC = () => {
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('play', handlePlay)
       audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('error', handleError)
     }
-  }, [currentlyPlaying, isPlaying, volume, updateTime, updateDuration, updateIsPlaying])
+  }, [currentlyPlaying, isPlaying, volume, updateTime, updateDuration, updateIsPlaying, setVolume])
 
   // Gérer la lecture vidéo
   useEffect(() => {
@@ -218,6 +289,10 @@ const PlayerBarFull: React.FC = () => {
       return
     }
 
+    // Normaliser l'URL pour utiliser le proxy Vite
+    const fullUrl = normalizeMediaUrl(currentUrl)
+    console.log('Video URL conversion:', currentUrl, '->', fullUrl)
+
     // Normaliser l'URL pour la comparaison
     const normalizeUrl = (url: string) => {
       try {
@@ -232,20 +307,49 @@ const PlayerBarFull: React.FC = () => {
       }
     }
 
-    const currentNormalizedUrl = normalizeUrl(currentUrl)
+    const currentNormalizedUrl = normalizeUrl(fullUrl)
     const videoNormalizedUrl = video.src ? normalizeUrl(video.src) : ''
     
     // Vérifier si l'URL a changé
     if (videoNormalizedUrl !== currentNormalizedUrl) {
       // Nouveau média, charger
-      video.src = currentUrl
+      console.log('Loading video:', fullUrl)
+      console.log('Video element:', video)
+      console.log('Video readyState before load:', video.readyState)
+      
+      // Réinitialiser l'élément vidéo
+      video.pause()
+      video.src = ''
       video.load()
+      
+      // Attendre un peu avant de charger la nouvelle source
+      setTimeout(() => {
+        video.src = fullUrl
+        video.load()
+        console.log('Video src set to:', fullUrl)
+        console.log('Video readyState after load:', video.readyState)
+        
+        // Vérifier si le fichier est accessible
+        fetch(fullUrl, { method: 'HEAD' })
+          .then((response) => {
+            console.log('Video file accessibility check:', response.status, response.ok)
+            if (!response.ok) {
+              console.error('Video file not accessible:', response.status, response.statusText)
+            }
+          })
+          .catch((error) => {
+            console.error('Error checking video file accessibility:', error)
+          })
+      }, 100)
     }
 
     // Gérer la lecture
     if (isPlaying) {
       const playVideo = () => {
-        video.play().catch((error) => {
+        console.log('Attempting to play video:', fullUrl, 'readyState:', video.readyState, 'volume:', video.volume)
+        video.play().then(() => {
+          console.log('Video playing successfully')
+        }).catch((error) => {
           console.error('Error playing video:', error)
           updateIsPlaying(false)
         })
@@ -257,6 +361,7 @@ const PlayerBarFull: React.FC = () => {
       } else {
         // Attendre que le média soit prêt
         const handleCanPlay = () => {
+          console.log('Video can play, starting playback')
           playVideo()
           video.removeEventListener('canplay', handleCanPlay)
           video.removeEventListener('loadeddata', handleCanPlay)
@@ -268,18 +373,47 @@ const PlayerBarFull: React.FC = () => {
       video.pause()
     }
 
-    video.volume = volume
+    // S'assurer que le volume est correctement défini et que la vidéo n'est pas muette
+    const finalVolume = volume > 0 ? volume : 0.5
+    if (video.volume !== finalVolume) {
+      console.log('Setting video volume to:', finalVolume)
+      video.volume = finalVolume
+      if (volume === 0) {
+        setVolume(0.5)
+      }
+    }
+    
+    // S'assurer que la vidéo n'est pas muette
+    if (video.muted) {
+      console.warn('Video is muted, unmuting')
+      video.muted = false
+    }
 
     const handleTimeUpdate = () => updateTime(video.currentTime)
-    const handleLoadedMetadata = () => updateDuration(video.duration || 0)
+    const handleLoadedMetadata = () => {
+      console.log('Video metadata loaded, duration:', video.duration)
+      updateDuration(video.duration || 0)
+    }
     const handleEnded = () => {
       updateIsPlaying(false)
       updateTime(0)
     }
-    const handlePlay = () => updateIsPlaying(true)
-    const handlePause = () => updateIsPlaying(false)
+    const handlePlay = () => {
+      console.log('Video play event fired')
+      updateIsPlaying(true)
+    }
+    const handlePause = () => {
+      console.log('Video pause event fired')
+      updateIsPlaying(false)
+    }
     const handleError = (e: Event) => {
-      console.error('Video error:', e)
+      console.error('Video element error:', e, video.error)
+      if (video.error) {
+        console.error('Video error details:', {
+          code: video.error.code,
+          message: video.error.message,
+        })
+      }
       updateIsPlaying(false)
     }
 
@@ -561,8 +695,27 @@ const PlayerBarFull: React.FC = () => {
 
   return (
     <CarModeOverlay isEnabled={isCarMode}>
-      {currentlyPlaying.type === 'audio' && <audio ref={audioRef} preload="metadata" />}
-      {currentlyPlaying.type === 'video' && <video ref={videoRef} preload="metadata" style={{ display: 'none' }} />}
+      {currentlyPlaying.type === 'audio' && (
+        <audio 
+          ref={audioRef} 
+          preload="metadata" 
+          crossOrigin="anonymous"
+          onError={(e) => {
+            console.error('Audio element error event:', e, audioRef.current?.error)
+          }}
+        />
+      )}
+      {currentlyPlaying.type === 'video' && (
+        <video 
+          ref={videoRef} 
+          preload="metadata" 
+          style={{ display: 'none' }}
+          crossOrigin="anonymous"
+          onError={(e) => {
+            console.error('Video element error event:', e, videoRef.current?.error)
+          }}
+        />
+      )}
       
       <div style={playerBarStyle}>
         {/* Section gauche - Info média */}

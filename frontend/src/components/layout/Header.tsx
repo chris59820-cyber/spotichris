@@ -29,10 +29,17 @@ const Header: React.FC = () => {
   const logoStyle: React.CSSProperties = {
     fontSize: theme.fontSizes['2xl'],
     fontWeight: 700,
-    background: theme.colors.gradientPrimary,
+    backgroundImage: theme.colors.gradientPrimary,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    color: 'transparent',
     textDecoration: 'none',
+    display: 'inline-block',
+    lineHeight: 1.2,
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    msUserSelect: 'none',
   }
 
   return (

@@ -161,6 +161,59 @@ cd backend
 npm run db:init
 ```
 
+## Erreur "Format vidéo non supporté" ou "DEMUXER_ERROR"
+
+**Symptôme :** La vidéo ne se lance pas et vous voyez une erreur dans la console :
+- `MediaError code: 4`
+- `DEMUXER_ERROR_COULD_NOT_OPEN`
+- `FFmpeg Demuxer: open context failed`
+
+**Cause :** Les navigateurs web ont un support limité des formats vidéo. Ils ne peuvent lire que certains formats nativement.
+
+### Formats supportés par les navigateurs web
+
+✅ **Formats supportés :**
+- **MP4** avec codec H.264 (recommandé)
+- **WebM** (VP8/VP9)
+- **OGG** (Theora)
+
+❌ **Formats NON supportés :**
+- **AVI** (Audio Video Interleave)
+- **MKV** (Matroska)
+- **FLV** (Flash Video)
+- **WMV** (Windows Media Video)
+- **3GP** (3GPP)
+- **ASF** (Advanced Systems Format)
+
+### Solution
+
+**Option 1 : Convertir le fichier en MP4 (recommandé)**
+
+Utilisez un outil de conversion vidéo pour convertir votre fichier en MP4 avec le codec H.264 :
+
+**Outils recommandés :**
+- **FFmpeg** (ligne de commande) :
+  ```bash
+  ffmpeg -i input.avi -c:v libx264 -c:a aac -strict experimental output.mp4
+  ```
+- **HandBrake** (interface graphique) : https://handbrake.fr/
+- **VLC Media Player** : Menu Media > Convertir/Enregistrer
+
+**Option 2 : Utiliser un serveur de transcodage**
+
+Pour supporter tous les formats, vous devriez implémenter un serveur de transcodage qui convertit les vidéos en temps réel vers un format supporté par le navigateur. Cela nécessite :
+- FFmpeg installé sur le serveur
+- Un service de transcodage (ex: Node.js avec `fluent-ffmpeg`)
+- Plus de ressources serveur
+
+### Détection automatique
+
+L'application détecte automatiquement les formats non supportés et affiche un message d'erreur clair avec des instructions pour convertir le fichier.
+
+### Note importante
+
+Même si le backend accepte l'upload de fichiers AVI, MKV, etc. (pour des raisons de compatibilité), ces fichiers ne pourront pas être lus directement dans le navigateur. Il est recommandé de convertir les fichiers en MP4 avant l'upload pour une meilleure expérience utilisateur.
+
 ## Obtenir de l'aide
 
 Si le problème persiste :
@@ -168,4 +221,5 @@ Si le problème persiste :
 2. Vérifiez la console du navigateur
 3. Vérifiez que tous les services sont démarrés
 4. Vérifiez la configuration de la base de données
+5. Vérifiez le format de vos fichiers vidéo (doivent être MP4, WebM ou OGG)
 

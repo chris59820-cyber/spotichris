@@ -70,7 +70,7 @@ export const updateMedia = async (req: Request, res: Response) => {
       throw new ValidationError('Invalid media ID')
     }
 
-    const { title, description, artist, album, duration, thumbnail_url, video_category, music_category } = req.body
+    const { title, description, artist, album, duration, thumbnail_url, video_category, genre, music_category } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined
     const thumbnailFile = files?.thumbnail?.[0]
 
@@ -79,6 +79,18 @@ export const updateMedia = async (req: Request, res: Response) => {
       const validCategories = ['Cinéma', 'Série', 'Documentaire', 'Musique', 'Sport']
       if (!validCategories.includes(video_category)) {
         throw new ValidationError(`Invalid video category. Must be one of: ${validCategories.join(', ')}`)
+      }
+    }
+
+    // Validate genre if provided (only for Cinéma and Série)
+    if (genre) {
+      const validGenres = ['Action', 'Animation', 'Arts martiaux', 'Aventure', 'Biopic', 'Comédie', 'Comédie dramatique', 'Comédie romantique', 'Documentaire', 'Drame', 'Espionnage', 'Fantastique', 'Film musical', 'Guerre', 'Horreur', 'Paranormal', 'Policier', 'Romance', 'Science-fiction', 'Sitcom', 'Super-héros', 'Thriller', 'Thriller politique', 'Thriller psychologique', 'Western']
+      if (!validGenres.includes(genre)) {
+        throw new ValidationError(`Invalid genre. Must be one of: ${validGenres.join(', ')}`)
+      }
+      // Genre is only valid for Cinéma and Série
+      if (video_category && !['Cinéma', 'Série'].includes(video_category)) {
+        throw new ValidationError('Genre can only be set for Cinéma or Série video categories')
       }
     }
 
@@ -105,6 +117,22 @@ export const updateMedia = async (req: Request, res: Response) => {
     if (duration !== undefined) updateData.duration = duration ? parseInt(duration, 10) : null
     if (finalThumbnailUrl !== undefined) updateData.thumbnail_url = finalThumbnailUrl
     if (video_category !== undefined) updateData.video_category = video_category || null
+    if (genre !== undefined) {
+      // Only set genre if video_category is Cinéma or Série
+      if (video_category && ['Cinéma', 'Série'].includes(video_category)) {
+        updateData.genre = genre || null
+      } else if (!video_category) {
+        // If video_category is not provided, check existing media
+        const existingMedia = await mediaService.getById(id)
+        if (existingMedia && existingMedia.video_category && ['Cinéma', 'Série'].includes(existingMedia.video_category)) {
+          updateData.genre = genre || null
+        } else {
+          updateData.genre = null
+        }
+      } else {
+        updateData.genre = null
+      }
+    }
     if (music_category !== undefined) updateData.music_category = music_category || null
 
     const media = await mediaService.update(id, updateData)
@@ -121,7 +149,7 @@ export const updateMedia = async (req: Request, res: Response) => {
 export const createMedia = async (req: Request, res: Response) => {
   try {
     // Multer adds files to req.files (using fields) and body fields to req.body
-    const { title, description, artist, album, duration, type, thumbnail_url, video_category, music_category } = req.body
+    const { title, description, artist, album, duration, type, thumbnail_url, video_category, genre, music_category } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined
     const file = files?.file?.[0] // The uploaded media file
     const thumbnailFile = files?.thumbnail?.[0] // The uploaded thumbnail file
@@ -148,6 +176,18 @@ export const createMedia = async (req: Request, res: Response) => {
       const validCategories = ['Cinéma', 'Série', 'Documentaire', 'Musique', 'Sport']
       if (!validCategories.includes(video_category)) {
         throw new ValidationError(`Invalid video category. Must be one of: ${validCategories.join(', ')}`)
+      }
+    }
+
+    // Validate genre if provided (only for Cinéma and Série)
+    if (type === 'video' && genre) {
+      const validGenres = ['Action', 'Animation', 'Arts martiaux', 'Aventure', 'Biopic', 'Comédie', 'Comédie dramatique', 'Comédie romantique', 'Documentaire', 'Drame', 'Espionnage', 'Fantastique', 'Film musical', 'Guerre', 'Horreur', 'Paranormal', 'Policier', 'Romance', 'Science-fiction', 'Sitcom', 'Super-héros', 'Thriller', 'Thriller politique', 'Thriller psychologique', 'Western']
+      if (!validGenres.includes(genre)) {
+        throw new ValidationError(`Invalid genre. Must be one of: ${validGenres.join(', ')}`)
+      }
+      // Genre is only valid for Cinéma and Série
+      if (video_category && !['Cinéma', 'Série'].includes(video_category)) {
+        throw new ValidationError('Genre can only be set for Cinéma or Série video categories')
       }
     }
 
@@ -188,6 +228,7 @@ export const createMedia = async (req: Request, res: Response) => {
       url: finalUrl,
       thumbnail_url: finalThumbnailUrl,
       video_category: type === 'video' ? (video_category || undefined) : undefined,
+      genre: type === 'video' && ['Cinéma', 'Série'].includes(video_category || '') ? (genre || undefined) : undefined,
       music_category: type === 'music' ? (music_category || undefined) : undefined,
     }
 

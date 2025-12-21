@@ -13,6 +13,7 @@ export interface MediaItem {
   url?: string
   thumbnail_url?: string
   video_category?: 'Cinéma' | 'Série' | 'Documentaire' | 'Musique' | 'Sport'
+  genre?: 'Action' | 'Animation' | 'Arts martiaux' | 'Aventure' | 'Biopic' | 'Comédie' | 'Comédie dramatique' | 'Comédie romantique' | 'Documentaire' | 'Drame' | 'Espionnage' | 'Fantastique' | 'Film musical' | 'Guerre' | 'Horreur' | 'Paranormal' | 'Policier' | 'Romance' | 'Science-fiction' | 'Sitcom' | 'Super-héros' | 'Thriller' | 'Thriller politique' | 'Thriller psychologique' | 'Western'
   music_category?: 'Pop' | 'Rock' | 'Jazz' | 'Classique' | 'Hip-Hop' | 'Électronique' | 'Rap' | 'R&B' | 'Country' | 'Reggae' | 'Metal' | 'Blues' | 'Folk' | 'World' | 'Autre'
   created_at?: string
   updated_at?: string
@@ -51,6 +52,7 @@ class MediaService {
     duration?: number
     thumbnail_url?: string
     video_category?: string
+    genre?: string
     music_category?: string
   }): Promise<MediaItem> {
     const token = localStorage.getItem('token')

@@ -36,7 +36,8 @@ const MainLayout: React.FC = () => {
     paddingBottom: currentlyPlaying 
       ? (currentlyPlaying.type === 'video' ? '320px' : '110px') // 90px player bar + 20px margin
       : '100px', // Extra space for player (more for video)
-    paddingRight: currentlyPlaying?.type === 'video' ? '20px' : theme.spacing.xl, // Space for video player
+    paddingLeft: theme.spacing.xl, // Espace normal à gauche
+    paddingRight: currentlyPlaying?.type === 'video' ? '820px' : theme.spacing.xl, // Espace pour le lecteur vidéo à droite (800px max + 20px marge)
   }
 
   return (

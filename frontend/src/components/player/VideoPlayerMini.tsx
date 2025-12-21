@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { usePlayer } from '../../contexts/PlayerContext'
 import { theme } from '../../styles/theme'
+import { normalizeMediaUrl } from '../../utils/urlUtils'
 
 interface VideoPlayerMiniProps {
   video: {
@@ -99,56 +100,134 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
     if (!videoElement) return
 
     // Update video source when video changes
-    let shouldAutoPlay = false
     if (currentlyPlaying?.media.id === video.id && video.url) {
-      if (videoElement.src !== video.url) {
-        videoElement.src = video.url
+      // Normaliser l'URL pour utiliser le proxy Vite
+      const fullUrl = normalizeMediaUrl(video.url)
+      console.log('VideoPlayerMini URL conversion:', video.url, '->', fullUrl)
+      
+      // Normaliser l'URL pour la comparaison
+      const normalizeUrl = (url: string) => {
+        try {
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            return new URL(url).pathname
+          }
+          return url
+        } catch {
+          return url
+        }
+      }
+      
+      const currentNormalizedUrl = normalizeUrl(fullUrl)
+      const videoNormalizedUrl = videoElement.src ? normalizeUrl(videoElement.src) : ''
+      
+      if (videoNormalizedUrl !== currentNormalizedUrl) {
+        console.log('Loading video in VideoPlayerMini:', fullUrl, 'isPlaying:', isPlaying)
+        // Réinitialiser l'élément vidéo
+        videoElement.pause()
+        videoElement.src = ''
         videoElement.load()
-        // Marquer qu'on doit lancer la lecture automatiquement quand le média sera prêt
-        shouldAutoPlay = isPlaying
+        
+        // Attendre un peu avant de charger la nouvelle source
+        setTimeout(() => {
+          videoElement.src = fullUrl
+          videoElement.load()
+          console.log('Video src set to:', fullUrl, 'readyState:', videoElement.readyState)
+          
+          // Si on doit jouer, attendre que le média soit prêt
+          if (isPlaying) {
+            const tryPlay = () => {
+              console.log('Attempting to play video, readyState:', videoElement.readyState)
+              if (videoElement.readyState >= 2) {
+                videoElement.play().then(() => {
+                  console.log('Video playing successfully in VideoPlayerMini')
+                }).catch((error) => {
+                  console.error('Error playing video:', error)
+                  updateIsPlaying(false)
+                })
+              } else {
+                // Attendre que le média soit prêt
+                const handleCanPlay = () => {
+                  console.log('Video can play, starting playback')
+                  videoElement.play().then(() => {
+                    console.log('Video playing successfully in VideoPlayerMini (after canplay)')
+                  }).catch((error) => {
+                    console.error('Error playing video:', error)
+                    updateIsPlaying(false)
+                  })
+                  videoElement.removeEventListener('canplay', handleCanPlay)
+                  videoElement.removeEventListener('loadeddata', handleCanPlay)
+                }
+                videoElement.addEventListener('canplay', handleCanPlay)
+                videoElement.addEventListener('loadeddata', handleCanPlay)
+              }
+            }
+            
+            // Essayer de jouer immédiatement ou attendre
+            if (videoElement.readyState >= 2) {
+              tryPlay()
+            } else {
+              const handleReady = () => {
+                tryPlay()
+                videoElement.removeEventListener('canplay', handleReady)
+                videoElement.removeEventListener('loadeddata', handleReady)
+              }
+              videoElement.addEventListener('canplay', handleReady)
+              videoElement.addEventListener('loadeddata', handleReady)
+            }
+          }
+        }, 100)
       }
     }
 
     // Sync play/pause state
     if (isPlaying && currentlyPlaying?.media.id === video.id) {
       // S'assurer que la lecture démarre même si le média vient d'être changé
-      if (videoElement.paused) {
+      if (videoElement.paused && videoElement.src) {
+        console.log('Video should be playing, attempting to play, readyState:', videoElement.readyState)
         // Si le média est déjà chargé, lancer immédiatement
-        if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
-          videoElement.play().catch((error) => {
+        if (videoElement.readyState >= 2) {
+          videoElement.play().then(() => {
+            console.log('Video playing successfully (sync state)')
+          }).catch((error) => {
             console.error('Error playing video:', error)
             updateIsPlaying(false)
           })
         } else {
           // Sinon, attendre que le média soit prêt
           const handleCanPlay = () => {
-            videoElement.play().catch((error) => {
+            console.log('Video can play (sync state), starting playback')
+            videoElement.play().then(() => {
+              console.log('Video playing successfully (sync state, after canplay)')
+            }).catch((error) => {
               console.error('Error playing video:', error)
               updateIsPlaying(false)
             })
             videoElement.removeEventListener('canplay', handleCanPlay)
+            videoElement.removeEventListener('loadeddata', handleCanPlay)
           }
           videoElement.addEventListener('canplay', handleCanPlay)
+          videoElement.addEventListener('loadeddata', handleCanPlay)
         }
       }
-    } else {
+    } else if (!isPlaying && currentlyPlaying?.media.id === video.id) {
       videoElement.pause()
     }
 
-    // Gérer le démarrage automatique pour un nouveau média
-    if (shouldAutoPlay) {
-      const handleCanPlayAuto = () => {
-        videoElement.play().catch((error) => {
-          console.error('Error playing video:', error)
-          updateIsPlaying(false)
-        })
-        videoElement.removeEventListener('canplay', handleCanPlayAuto)
+    // Sync volume - s'assurer que le volume n'est pas à 0
+    const finalVolume = volume > 0 ? volume : 0.5
+    if (videoElement.volume !== finalVolume) {
+      console.log('Setting video volume to:', finalVolume)
+      videoElement.volume = finalVolume
+      if (volume === 0) {
+        setVolume(0.5)
       }
-      videoElement.addEventListener('canplay', handleCanPlayAuto)
     }
-
-    // Sync volume
-    videoElement.volume = volume
+    
+    // S'assurer que la vidéo n'est pas muette
+    if (videoElement.muted) {
+      console.warn('Video is muted, unmuting')
+      videoElement.muted = false
+    }
 
     // Sync seek
     if (Math.abs(videoElement.currentTime - currentTime) > 1) {
@@ -171,12 +250,31 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
 
     const handlePlay = () => updateIsPlaying(true)
     const handlePause = () => updateIsPlaying(false)
+    const handleError = (e: Event) => {
+      console.error('Video element error in useEffect:', e, videoElement.error)
+      if (videoElement.error) {
+        const errorCode = videoElement.error.code
+        const errorMessage = videoElement.error.message
+        const fileExtension = video.url?.split('.').pop()?.toLowerCase()
+        
+        // Détecter les erreurs de format non supporté
+        if (errorCode === 4 || errorMessage?.includes('DEMUXER_ERROR') || errorMessage?.includes('Could not open')) {
+          if (fileExtension === 'avi' || fileExtension === 'mkv' || fileExtension === 'flv') {
+            alert(`❌ Format vidéo non supporté\n\nLe format ${fileExtension.toUpperCase()} n'est pas supporté par les navigateurs web.\n\nFormats supportés : MP4 (H.264), WebM, OGG\n\nVeuillez convertir votre fichier en MP4 pour pouvoir le lire dans le navigateur.`)
+          } else {
+            alert(`❌ Erreur de lecture vidéo\n\nLe navigateur ne peut pas lire ce fichier vidéo.\n\nCode d'erreur : ${errorCode}\nMessage : ${errorMessage}\n\nVeuillez vérifier que le fichier n'est pas corrompu et qu'il est dans un format supporté (MP4, WebM, OGG).`)
+          }
+        }
+      }
+      updateIsPlaying(false)
+    }
 
     videoElement.addEventListener('timeupdate', handleTimeUpdate)
     videoElement.addEventListener('loadedmetadata', handleLoadedMetadata)
     videoElement.addEventListener('ended', handleEnded)
     videoElement.addEventListener('play', handlePlay)
     videoElement.addEventListener('pause', handlePause)
+    videoElement.addEventListener('error', handleError)
 
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate)
@@ -184,6 +282,7 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
       videoElement.removeEventListener('ended', handleEnded)
       videoElement.removeEventListener('play', handlePlay)
       videoElement.removeEventListener('pause', handlePause)
+      videoElement.removeEventListener('error', handleError)
     }
   }, [
     video.id,
@@ -485,7 +584,7 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
     >
       <video
         ref={videoRef}
-        src={video.url}
+        src={video.url ? normalizeMediaUrl(video.url) : undefined}
         poster={video.thumbnail_url}
         style={videoStyle}
         onClick={(e) => {
@@ -494,6 +593,26 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
           resetHideControlsTimer()
         }}
         playsInline
+        muted={false}
+        crossOrigin="anonymous"
+        onError={(e) => {
+          console.error('Video element error event:', e, videoRef.current?.error)
+          if (videoRef.current?.error) {
+            const errorCode = videoRef.current.error.code
+            const errorMessage = videoRef.current.error.message
+            const fileExtension = video.url?.split('.').pop()?.toLowerCase()
+            
+            // Détecter les erreurs de format non supporté
+            if (errorCode === 4 || errorMessage?.includes('DEMUXER_ERROR') || errorMessage?.includes('Could not open')) {
+              if (fileExtension === 'avi' || fileExtension === 'mkv' || fileExtension === 'flv') {
+                alert(`❌ Format vidéo non supporté\n\nLe format ${fileExtension.toUpperCase()} n'est pas supporté par les navigateurs web.\n\nFormats supportés : MP4 (H.264), WebM, OGG\n\nVeuillez convertir votre fichier en MP4 pour pouvoir le lire dans le navigateur.`)
+              } else {
+                alert(`❌ Erreur de lecture vidéo\n\nLe navigateur ne peut pas lire ce fichier vidéo.\n\nCode d'erreur : ${errorCode}\nMessage : ${errorMessage}\n\nVeuillez vérifier que le fichier n'est pas corrompu et qu'il est dans un format supporté (MP4, WebM, OGG).`)
+              }
+            }
+            updateIsPlaying(false)
+          }
+        }}
       />
       {/* Overlay quand la vidéo est masquée */}
       {isVideoHidden && (

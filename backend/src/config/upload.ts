@@ -67,8 +67,12 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
       'video/ogg',
       'video/quicktime',
       'video/x-msvideo', // .avi
+      'video/avi', // .avi (alternative MIME type)
       'video/x-matroska', // .mkv
       'video/x-ms-wmv', // .wmv
+      'video/x-flv', // .flv
+      'video/3gpp', // .3gp
+      'video/x-ms-asf', // .asf
     ]
     
     if (allowedMimeTypes.includes(file.mimetype)) {

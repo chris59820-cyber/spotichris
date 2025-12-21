@@ -31,17 +31,45 @@ class CarPlayService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
   private reconnectTimeout: NodeJS.Timeout | null = null
+  private onStateUpdateCallback?: (state: PlaybackState) => void
+  private onCommandCallback?: (command: CarPlayCommand) => void
+  private isConnecting = false
 
   /**
    * Se connecter au serveur WebSocket (Socket.IO) pour la synchronisation
    */
   connect(onStateUpdate?: (state: PlaybackState) => void, onCommand?: (command: CarPlayCommand) => void) {
+    // Si déjà connecté, juste mettre à jour les callbacks
+    if (this.socket && this.socket.connected) {
+      this.onStateUpdateCallback = onStateUpdate
+      this.onCommandCallback = onCommand
+      return
+    }
+
+    // Si une connexion est en cours, ne pas en créer une nouvelle
+    if (this.isConnecting) {
+      this.onStateUpdateCallback = onStateUpdate
+      this.onCommandCallback = onCommand
+      return
+    }
+
     try {
       const token = localStorage.getItem('token')
       if (!token) {
         console.warn('CarPlay/Android Auto: Pas de token, connexion impossible')
         return
       }
+
+      // Nettoyer l'ancienne connexion si elle existe
+      if (this.socket) {
+        this.socket.removeAllListeners()
+        this.socket.disconnect()
+        this.socket = null
+      }
+
+      this.isConnecting = true
+      this.onStateUpdateCallback = onStateUpdate
+      this.onCommandCallback = onCommand
 
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'wss://your-domain.com'
@@ -55,22 +83,24 @@ class CarPlayService {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
+        reconnectionDelayMax: 5000,
       })
 
       this.socket.on('connect', () => {
         console.log('✅ CarPlay/Android Auto: Connecté via WebSocket')
         this.reconnectAttempts = 0
+        this.isConnecting = false
       })
 
       this.socket.on('playback_state', (state: PlaybackState) => {
-        if (onStateUpdate) {
-          onStateUpdate(state)
+        if (this.onStateUpdateCallback) {
+          this.onStateUpdateCallback(state)
         }
       })
 
       this.socket.on('carplay_command', (command: CarPlayCommand) => {
-        if (onCommand) {
-          onCommand(command)
+        if (this.onCommandCallback) {
+          this.onCommandCallback(command)
         }
       })
 
@@ -80,22 +110,17 @@ class CarPlayService {
 
       this.socket.on('disconnect', (reason: string) => {
         console.log(`🔌 CarPlay/Android Auto: Déconnecté (${reason})`)
-        if (reason === 'io server disconnect') {
-          // Le serveur a forcé la déconnexion, ne pas reconnecter automatiquement
-          this.socket?.connect()
-        }
+        this.isConnecting = false
+        // Laisser Socket.IO gérer la reconnexion automatique
+        // Ne pas forcer de reconnexion manuelle pour éviter les boucles
       })
 
       this.socket.on('connect_error', (error: Error) => {
         console.error('❌ Erreur de connexion CarPlay/Android Auto:', error.message)
+        this.isConnecting = false
         this.reconnectAttempts++
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnectTimeout = setTimeout(() => {
-            if (this.socket && !this.socket.connected) {
-              this.socket.connect()
-            }
-          }, this.reconnectDelay * this.reconnectAttempts)
-        }
+        // Laisser Socket.IO gérer la reconnexion automatique
+        // Ne pas ajouter de logique de reconnexion manuelle supplémentaire
       })
     } catch (error) {
       console.error('❌ Erreur lors de la connexion au service CarPlay/Android Auto:', error)
@@ -151,7 +176,11 @@ class CarPlayService {
       clearTimeout(this.reconnectTimeout)
       this.reconnectTimeout = null
     }
+    this.isConnecting = false
+    this.onStateUpdateCallback = undefined
+    this.onCommandCallback = undefined
     if (this.socket) {
+      this.socket.removeAllListeners()
       this.socket.disconnect()
       this.socket = null
     }

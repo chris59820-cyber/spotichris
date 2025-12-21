@@ -43,6 +43,7 @@ class UploadService {
     description?: string
     duration?: number
     videoCategory?: string
+    genre?: string
     musicCategory?: string
   }): Promise<UploadMediaResponse> {
     const formData = new FormData()
@@ -73,6 +74,10 @@ class UploadService {
     
     if (data.videoCategory) {
       formData.append('video_category', data.videoCategory)
+    }
+    
+    if (data.genre) {
+      formData.append('genre', data.genre)
     }
     
     if (data.musicCategory) {

@@ -17,6 +17,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
   const [videoCategory, setVideoCategory] = useState<string>('')
+  const [videoGenre, setVideoGenre] = useState<string>('')
   const [musicCategory, setMusicCategory] = useState<string>('')
   const [file, setFile] = useState<File | null>(null)
   const [thumbnail, setThumbnail] = useState<File | null>(null)
@@ -28,6 +29,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
   const { play } = usePlayer()
 
   const videoCategories = ['Cinéma', 'Série', 'Documentaire', 'Musique', 'Sport']
+  const videoGenres = ['Action', 'Animation', 'Arts martiaux', 'Aventure', 'Biopic', 'Comédie', 'Comédie dramatique', 'Comédie romantique', 'Documentaire', 'Drame', 'Espionnage', 'Fantastique', 'Film musical', 'Guerre', 'Horreur', 'Paranormal', 'Policier', 'Romance', 'Science-fiction', 'Sitcom', 'Super-héros', 'Thriller', 'Thriller politique', 'Thriller psychologique', 'Western']
   const musicCategories = ['Pop', 'Rock', 'Jazz', 'Classique', 'Hip-Hop', 'Électronique', 'Rap', 'R&B', 'Country', 'Reggae', 'Metal', 'Blues', 'Folk', 'World', 'Autre']
 
   const detectMediaDuration = async (file: File, mediaType: 'music' | 'video') => {
@@ -80,40 +82,65 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
         // Pour les fichiers vidéo
         const video = document.createElement('video')
         video.preload = 'metadata'
+        video.muted = true // Muter pour éviter les problèmes d'autoplay
+        video.playsInline = true
         video.src = fileUrl
         
         await new Promise<void>((resolve, reject) => {
           const handleLoadedMetadata = () => {
-            if (video.duration && isFinite(video.duration)) {
+            if (video.duration && isFinite(video.duration) && video.duration > 0) {
               detectedDuration = Math.floor(video.duration)
+              console.log('Durée vidéo détectée:', detectedDuration)
             }
             cleanup()
             resolve()
           }
 
+          const handleLoadedData = () => {
+            if (video.duration && isFinite(video.duration) && video.duration > 0 && detectedDuration === 0) {
+              detectedDuration = Math.floor(video.duration)
+              console.log('Durée vidéo détectée (loadeddata):', detectedDuration)
+            }
+          }
+
+          const handleCanPlay = () => {
+            if (video.duration && isFinite(video.duration) && video.duration > 0 && detectedDuration === 0) {
+              detectedDuration = Math.floor(video.duration)
+              console.log('Durée vidéo détectée (canplay):', detectedDuration)
+            }
+          }
+
           const handleError = (e: Event) => {
+            console.warn('Erreur lors du chargement du fichier vidéo pour détection de durée:', e)
+            // Ne pas rejeter, juste résoudre sans durée détectée
             cleanup()
-            reject(new Error('Erreur lors du chargement du fichier vidéo'))
+            resolve()
           }
 
           const cleanup = () => {
             video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+            video.removeEventListener('loadeddata', handleLoadedData)
+            video.removeEventListener('canplay', handleCanPlay)
             video.removeEventListener('error', handleError)
             if (timeoutId) clearTimeout(timeoutId)
             video.src = ''
             video.load()
+            URL.revokeObjectURL(fileUrl)
           }
 
           video.addEventListener('loadedmetadata', handleLoadedMetadata)
+          video.addEventListener('loadeddata', handleLoadedData)
+          video.addEventListener('canplay', handleCanPlay)
           video.addEventListener('error', handleError)
           
-          // Timeout après 10 secondes pour les vidéos
+          // Timeout après 15 secondes pour les vidéos (plus long car les vidéos peuvent être grandes)
           timeoutId = setTimeout(() => {
             if (detectedDuration === 0) {
+              console.warn('Timeout lors de la détection de la durée vidéo')
               cleanup()
-              reject(new Error('Timeout lors de la détection de la durée'))
+              resolve() // Résoudre au lieu de rejeter pour ne pas bloquer l'upload
             }
-          }, 10000)
+          }, 15000)
 
           // Forcer le chargement des métadonnées
           video.load()
@@ -125,11 +152,14 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
         setDuration(detectedDuration.toString())
       }
 
-      // Nettoyer l'URL de l'objet
-      URL.revokeObjectURL(fileUrl)
+      // Nettoyer l'URL de l'objet (déjà fait dans cleanup pour la vidéo)
+      if (mediaType === 'music') {
+        URL.revokeObjectURL(fileUrl)
+      }
     } catch (error) {
       console.warn('Impossible de détecter automatiquement la durée du fichier:', error)
       // Ne pas bloquer l'upload si la détection échoue
+      // L'utilisateur pourra entrer la durée manuellement
     } finally {
       setDetectingDuration(false)
     }
@@ -190,6 +220,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
         description: description || undefined,
         duration: duration ? parseInt(duration, 10) : undefined,
         videoCategory: type === 'video' && videoCategory ? videoCategory : undefined,
+        genre: type === 'video' && ['Cinéma', 'Série'].includes(videoCategory) && videoGenre ? videoGenre : undefined,
         musicCategory: type === 'music' && musicCategory ? musicCategory : undefined,
       })
 
@@ -224,6 +255,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
         setDescription('')
         setDuration('')
         setVideoCategory('')
+        setVideoGenre('')
         setMusicCategory('')
         setFile(null)
         setThumbnail(null)
@@ -354,6 +386,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
               onClick={async () => {
                 setType('music')
                 setVideoCategory('') // Reset video category when switching to music
+                setVideoGenre('') // Reset video genre when switching to music
                 // Re-détecter la durée si un fichier est déjà sélectionné
                 if (file) {
                   await detectMediaDuration(file, 'music')
@@ -370,6 +403,7 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
                 setType('video')
                 setArtist('') // Reset artist/album when switching to video (unless it's a music video)
                 setAlbum('')
+                setVideoGenre('') // Reset video genre when switching to video
                 setMusicCategory('') // Reset music category when switching to video
                 // Re-détecter la durée si un fichier est déjà sélectionné
                 if (file) {
@@ -505,7 +539,13 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
             </label>
             <select
               value={videoCategory}
-              onChange={(e) => setVideoCategory(e.target.value)}
+              onChange={(e) => {
+                setVideoCategory(e.target.value)
+                // Reset genre if category changes to something other than Cinéma or Série
+                if (!['Cinéma', 'Série'].includes(e.target.value)) {
+                  setVideoGenre('')
+                }
+              }}
               style={{
                 width: '100%',
                 padding: theme.spacing.md,
@@ -532,6 +572,55 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({ onUploadSuccess }) =>
               {videoCategories.map((category) => (
                 <option key={category} value={category}>
                   {category}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Video Genre (for video with category Cinéma or Série) */}
+        {type === 'video' && ['Cinéma', 'Série'].includes(videoCategory) && (
+          <div style={{ marginBottom: theme.spacing.lg }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: theme.spacing.sm,
+                color: theme.colors.textSecondary,
+                fontSize: theme.fontSizes.sm,
+                fontWeight: 500,
+              }}
+            >
+              Genre
+            </label>
+            <select
+              value={videoGenre}
+              onChange={(e) => setVideoGenre(e.target.value)}
+              style={{
+                width: '100%',
+                padding: theme.spacing.md,
+                backgroundColor: theme.colors.bgSecondary,
+                border: `2px solid ${theme.colors.borderPrimary}`,
+                borderRadius: theme.borderRadius.md,
+                color: theme.colors.textPrimary,
+                fontSize: theme.fontSizes.base,
+                fontFamily: theme.fonts.primary,
+                cursor: 'pointer',
+                outline: 'none',
+                transition: theme.transitions.base,
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.primary
+                e.currentTarget.style.boxShadow = theme.shadows.glow
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.borderPrimary
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <option value="">Sélectionner un genre</option>
+              {videoGenres.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
                 </option>
               ))}
             </select>

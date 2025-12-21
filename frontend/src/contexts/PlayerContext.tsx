@@ -52,6 +52,12 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   const play = useCallback((media: MediaItem) => {
     const playerType: PlayerType = media.type === 'music' ? 'audio' : 'video'
+    console.log('🎵 PlayerContext.play() called:', {
+      mediaId: media.id,
+      title: media.title,
+      type: playerType,
+      url: media.url,
+    })
     setCurrentlyPlaying({
       media,
       type: playerType,
@@ -144,9 +150,9 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
     }
   }, [currentlyPlaying])
 
-  // Synchroniser avec CarPlay/Android Auto
+  // Synchroniser avec CarPlay/Android Auto - Se connecter une seule fois au montage
   useEffect(() => {
-    // Se connecter au service CarPlay
+    // Se connecter au service CarPlay (une seule fois)
     carPlayService.connect(
       // Callback pour recevoir les mises à jour d'état (depuis d'autres clients)
       (state: PlaybackState) => {
@@ -184,9 +190,11 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
     )
 
     return () => {
+      // Ne déconnecter que lors du démontage complet du composant
       carPlayService.disconnect()
     }
-  }, [togglePlayPause, seek, currentlyPlaying])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Dépendances vides = exécuter une seule fois au montage
 
   // Envoyer l'état de lecture à CarPlay/Android Auto
   useEffect(() => {

@@ -116,9 +116,11 @@ const Favorites: React.FC = () => {
   }
 
   const MediaCard: React.FC<{ item: MediaItem }> = ({ item }) => {
+    const { addToQueue, queue } = usePlayer()
     const isCurrentlyPlaying = currentlyPlaying?.media.id === item.id && isPlaying
     const isFavorite = favoriteStatuses[item.id] || false
     const [togglingFavorite, setTogglingFavorite] = useState(false)
+    const isInQueue = queue.some((qItem) => qItem.id === item.id)
 
     const handlePlay = () => {
       if (item.url) {
@@ -135,9 +137,14 @@ const Favorites: React.FC = () => {
       setTogglingFavorite(false)
     }
 
+    const handleAddToQueue = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      addToQueue(item)
+    }
+
     return (
       <Card hoverable>
-        <div style={{ padding: theme.spacing.md }}>
+        <div style={{ padding: theme.spacing.xs }}>
           <div
             style={{
               width: '100%',
@@ -204,20 +211,40 @@ const Favorites: React.FC = () => {
               {item.album}
             </p>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.sm }}>
+          {/* Afficher le genre ou la catégorie */}
+          {(item.genre || item.music_category) && (
+            <div
+              style={{
+                display: 'inline-block',
+                padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                backgroundColor: theme.colors.primary + '20',
+                color: theme.colors.primary,
+                fontSize: theme.fontSizes.xs,
+                fontWeight: 600,
+                borderRadius: theme.borderRadius.full,
+                marginBottom: theme.spacing.xs,
+                border: `1px solid ${theme.colors.primary}40`,
+              }}
+            >
+              {item.type === 'video' ? item.genre : item.music_category}
+            </div>
+          )}
+          <div style={{ marginTop: theme.spacing.sm }}>
+            {/* Durée du média */}
             {item.duration && (
               <p
                 style={{
                   color: theme.colors.textTertiary,
                   fontSize: theme.fontSizes.xs,
                   fontWeight: 500,
+                  marginBottom: theme.spacing.sm,
                 }}
               >
                 {formatDuration(item.duration)}
               </p>
             )}
-            {/* Boutons actions */}
-            <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center' }}>
+            {/* Boutons actions sous la durée */}
+            <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center', justifyContent: 'center' }}>
               <Button
                 variant="primary"
                 size="sm"
@@ -248,6 +275,49 @@ const Favorites: React.FC = () => {
                 }}
               >
                 {isCurrentlyPlaying ? '⏸' : item.type === 'music' ? '▶' : '▶️'}
+              </Button>
+              <Button
+                variant={isInQueue ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={handleAddToQueue}
+                style={{
+                  backgroundColor: isInQueue ? theme.colors.primary : theme.colors.bgSecondary,
+                  border: `2px solid ${isInQueue ? theme.colors.primary : theme.colors.borderPrimary}`,
+                  minWidth: '44px',
+                  height: '44px',
+                  padding: 0,
+                  fontSize: theme.fontSizes.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isInQueue ? theme.shadows.glow : 'none',
+                  color: isInQueue ? theme.colors.textInverse : theme.colors.textPrimary,
+                  borderRadius: theme.borderRadius.md,
+                  transition: 'all 0.2s ease',
+                }}
+                title={isInQueue ? 'Dans la liste d\'attente' : 'Ajouter à la liste d\'attente'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.08)'
+                  e.currentTarget.style.boxShadow = theme.shadows.glow
+                  if (!isInQueue) {
+                    e.currentTarget.style.backgroundColor = theme.colors.primary
+                    e.currentTarget.style.borderColor = theme.colors.primary
+                    e.currentTarget.style.color = theme.colors.textInverse
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  if (!isInQueue) {
+                    e.currentTarget.style.backgroundColor = theme.colors.bgSecondary
+                    e.currentTarget.style.borderColor = theme.colors.borderPrimary
+                    e.currentTarget.style.color = theme.colors.textPrimary
+                    e.currentTarget.style.boxShadow = 'none'
+                  } else {
+                    e.currentTarget.style.boxShadow = theme.shadows.glow
+                  }
+                }}
+              >
+                {isInQueue ? '✓' : '➕'}
               </Button>
               <Button
                 variant="secondary"

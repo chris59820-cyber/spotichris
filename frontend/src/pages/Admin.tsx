@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
 import MediaUploadForm from '../components/admin/MediaUploadForm'
 import EditMediaModal from '../components/admin/EditMediaModal'
+import BulkMediaImporter from '../components/admin/BulkMediaImporter'
 import { mediaService, MediaItem } from '../services/media.service'
 import { usePlayer } from '../contexts/PlayerContext'
 import { theme } from '../styles/theme'
@@ -15,6 +16,7 @@ const Admin: React.FC = () => {
   const [recentMedia, setRecentMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
+  const [showBulkImporter, setShowBulkImporter] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -134,7 +136,19 @@ const Admin: React.FC = () => {
 
       {/* Upload Form */}
       <div style={sectionStyle}>
-        <MediaUploadForm onUploadSuccess={handleUploadSuccess} />
+        <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center', marginBottom: theme.spacing.md }}>
+          <MediaUploadForm onUploadSuccess={handleUploadSuccess} />
+          <Button
+            variant="secondary"
+            onClick={() => setShowBulkImporter(true)}
+            style={{
+              whiteSpace: 'nowrap',
+              padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+            }}
+          >
+            📊 Importer depuis la base de données
+          </Button>
+        </div>
       </div>
 
       {/* Recent Media */}
@@ -301,6 +315,13 @@ const Admin: React.FC = () => {
           onDelete={handleDeleteSuccess}
         />
       )}
+
+      {/* Bulk Media Importer */}
+      <BulkMediaImporter
+        isOpen={showBulkImporter}
+        onClose={() => setShowBulkImporter(false)}
+        onImportSuccess={handleUploadSuccess}
+      />
     </div>
   )
 }

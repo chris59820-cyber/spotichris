@@ -122,7 +122,7 @@ export const EQUALIZER_PRESETS: EqualizerPreset[] = [
 
 export const useEqualizer = (audioContext: AudioContext | null) => {
   const [bands, setBands] = useState<EqualizerBand[]>(DEFAULT_EQUALIZER_BANDS)
-  const [isEnabled, setIsEnabled] = useState(true)
+  const [isEnabled, setIsEnabled] = useState(false) // Désactivé par défaut pour éviter les problèmes de performance
   const filtersRef = useRef<BiquadFilterNode[]>([])
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null)
   const gainNodeRef = useRef<GainNode | null>(null)

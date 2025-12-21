@@ -43,6 +43,8 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
     updateTime,
     updateDuration,
     updateIsPlaying,
+    playNext,
+    queue,
   } = usePlayer()
 
   // Fonction pour réinitialiser le timer de masquage des contrôles
@@ -246,6 +248,11 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
     const handleEnded = () => {
       updateIsPlaying(false)
       updateTime(0)
+      
+      // Jouer le prochain média de la queue si disponible
+      if (queue.length > 0) {
+        playNext()
+      }
     }
 
     const handlePlay = () => updateIsPlaying(true)
@@ -294,6 +301,8 @@ const VideoPlayerMini: React.FC<VideoPlayerMiniProps> = ({
     updateTime,
     updateDuration,
     updateIsPlaying,
+    queue,
+    playNext,
   ])
 
   const handleSeek = (time: number) => {

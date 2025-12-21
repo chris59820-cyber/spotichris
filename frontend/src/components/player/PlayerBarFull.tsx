@@ -9,9 +9,11 @@ import { useCarMode } from '../../hooks/useCarMode'
 import { useSmartSpeakers } from '../../hooks/useSmartSpeakers'
 import { normalizeMediaUrl } from '../../utils/urlUtils'
 import Equalizer from '../audio/Equalizer'
+import AudioVisualizer from '../audio/AudioVisualizer'
 import CarModeOverlay from '../audio/CarModeOverlay'
 import Button from '../ui/Button'
 import Modal from '../ui/Modal'
+import AddToPlaylistModal from '../playlist/AddToPlaylistModal'
 
 const PlayerBarFull: React.FC = () => {
   const {
@@ -28,6 +30,10 @@ const PlayerBarFull: React.FC = () => {
     updateIsPlaying,
     play,
     pause,
+    playNext,
+    queue,
+    removeFromQueue,
+    clearQueue,
   } = usePlayer()
   const { isAuthenticated } = useAuth()
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -39,6 +45,9 @@ const PlayerBarFull: React.FC = () => {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const [showEqualizer, setShowEqualizer] = useState(false)
   const [showDeviceMenu, setShowDeviceMenu] = useState(false)
+  const [showQueueModal, setShowQueueModal] = useState(false)
+  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false)
+  const [selectedMediaId, setSelectedMediaId] = useState<number | null>(null)
   const [crossfadeEnabled, setCrossfadeEnabled] = useState(false)
   const [crossfadeDuration, setCrossfadeDuration] = useState(3)
   
@@ -156,108 +165,106 @@ const PlayerBarFull: React.FC = () => {
     
     // Vérifier si l'URL a changé
     if (audioNormalizedUrl !== currentNormalizedUrl) {
-      // Nouveau média, charger
-      console.log('Loading audio:', fullUrl)
-      console.log('Audio element:', audio)
-      console.log('Audio readyState before load:', audio.readyState)
-      
-      // Réinitialiser l'élément audio
+      // Nouveau média, charger immédiatement (pas de setTimeout qui peut causer des saccades)
       audio.pause()
-      audio.src = ''
+      audio.removeAttribute('src')
       audio.load()
       
-      // Attendre un peu avant de charger la nouvelle source
-      setTimeout(() => {
-        audio.src = fullUrl
-        audio.load()
-        console.log('Audio src set to:', fullUrl)
-        console.log('Audio readyState after load:', audio.readyState)
-        
-        // Vérifier si le fichier est accessible
-        fetch(fullUrl, { method: 'HEAD' })
-          .then((response) => {
-            console.log('Audio file accessibility check:', response.status, response.ok)
-            if (!response.ok) {
-              console.error('Audio file not accessible:', response.status, response.statusText)
-            }
-          })
-          .catch((error) => {
-            console.error('Error checking audio file accessibility:', error)
-          })
-      }, 100)
+      // Charger la nouvelle source immédiatement
+      audio.src = fullUrl
+      audio.preload = 'auto' // Précharger pour éviter les saccades
+      audio.load()
     }
 
     // Gérer la lecture
     if (isPlaying) {
-      const playAudio = () => {
-        console.log('Attempting to play audio:', fullUrl, 'readyState:', audio.readyState, 'volume:', audio.volume)
-        audio.play().then(() => {
-          console.log('Audio playing successfully')
-        }).catch((error) => {
+      const playAudio = async () => {
+        try {
+          // Attendre que le média soit prêt avant de jouer
+          if (audio.readyState < 2) {
+            await new Promise<void>((resolve) => {
+              const handleCanPlay = () => {
+                audio.removeEventListener('canplay', handleCanPlay)
+                audio.removeEventListener('loadeddata', handleCanPlay)
+                resolve()
+              }
+              audio.addEventListener('canplay', handleCanPlay, { once: true })
+              audio.addEventListener('loadeddata', handleCanPlay, { once: true })
+            })
+          }
+          
+          await audio.play()
+        } catch (error) {
           console.error('Error playing audio:', error)
           updateIsPlaying(false)
-        })
+        }
       }
 
-      // Si le média est déjà chargé, jouer immédiatement
-      if (audio.readyState >= 2) {
-        playAudio()
-      } else {
-        // Attendre que le média soit prêt
-        const handleCanPlay = () => {
-          console.log('Audio can play, starting playback')
-          playAudio()
-          audio.removeEventListener('canplay', handleCanPlay)
-          audio.removeEventListener('loadeddata', handleCanPlay)
-        }
-        audio.addEventListener('canplay', handleCanPlay)
-        audio.addEventListener('loadeddata', handleCanPlay)
-      }
+      playAudio()
     } else {
       audio.pause()
     }
 
-    // S'assurer que le volume est correctement défini et que l'audio n'est pas muet
+    // S'assurer que le volume est correctement défini
     const finalVolume = volume > 0 ? volume : 0.5
-    if (audio.volume !== finalVolume) {
-      console.log('Setting audio volume to:', finalVolume)
+    if (Math.abs(audio.volume - finalVolume) > 0.01) { // Éviter les mises à jour inutiles
       audio.volume = finalVolume
-      if (volume === 0) {
-        setVolume(0.5)
-      }
     }
     
     // S'assurer que l'audio n'est pas muet
     if (audio.muted) {
-      console.warn('Audio is muted, unmuting')
       audio.muted = false
     }
 
-    const handleTimeUpdate = () => updateTime(audio.currentTime)
+    // Utiliser requestAnimationFrame pour réduire la fréquence des mises à jour et éviter les saccades
+    let rafId: number | null = null
+    const handleTimeUpdate = () => {
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          updateTime(audio.currentTime)
+          rafId = null
+        })
+      }
+    }
+    
     const handleLoadedMetadata = () => {
-      console.log('Audio metadata loaded, duration:', audio.duration)
       updateDuration(audio.duration || 0)
     }
+    
     const handleEnded = () => {
       updateIsPlaying(false)
       updateTime(0)
+      
+      // Gérer le mode de répétition
+      if (repeatMode === 'one') {
+        // Rejouer le même média
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0
+          audioRef.current.play().catch((error) => {
+            console.error('Error replaying audio:', error)
+          })
+        }
+      } else if (repeatMode === 'all' && queue.length === 0) {
+        // Si mode répétition "all" et queue vide, rejouer le même média
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0
+          audioRef.current.play().catch((error) => {
+            console.error('Error replaying audio:', error)
+          })
+        }
+      } else {
+        // Jouer le prochain média de la queue
+        if (queue.length > 0) {
+          playNext()
+        }
+      }
     }
-    const handlePlay = () => {
-      console.log('Audio play event fired')
-      updateIsPlaying(true)
-    }
-    const handlePause = () => {
-      console.log('Audio pause event fired')
-      updateIsPlaying(false)
-    }
+    
+    const handlePlay = () => updateIsPlaying(true)
+    const handlePause = () => updateIsPlaying(false)
+    
     const handleError = (e: Event) => {
       console.error('Audio element error:', e, audio.error)
-      if (audio.error) {
-        console.error('Audio error details:', {
-          code: audio.error.code,
-          message: audio.error.message,
-        })
-      }
       updateIsPlaying(false)
     }
 
@@ -269,6 +276,9 @@ const PlayerBarFull: React.FC = () => {
     audio.addEventListener('error', handleError)
 
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)
@@ -276,7 +286,7 @@ const PlayerBarFull: React.FC = () => {
       audio.removeEventListener('pause', handlePause)
       audio.removeEventListener('error', handleError)
     }
-  }, [currentlyPlaying, isPlaying, volume, updateTime, updateDuration, updateIsPlaying, setVolume])
+  }, [currentlyPlaying?.media.id, currentlyPlaying?.media.url, isPlaying, volume, updateTime, updateDuration, updateIsPlaying, setVolume, repeatMode, queue, playNext])
 
   // Gérer la lecture vidéo
   useEffect(() => {
@@ -397,6 +407,30 @@ const PlayerBarFull: React.FC = () => {
     const handleEnded = () => {
       updateIsPlaying(false)
       updateTime(0)
+      
+      // Gérer le mode de répétition
+      if (repeatMode === 'one') {
+        // Rejouer le même média
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0
+          videoRef.current.play().catch((error) => {
+            console.error('Error replaying video:', error)
+          })
+        }
+      } else if (repeatMode === 'all' && queue.length === 0) {
+        // Si mode répétition "all" et queue vide, rejouer le même média
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0
+          videoRef.current.play().catch((error) => {
+            console.error('Error replaying video:', error)
+          })
+        }
+      } else {
+        // Jouer le prochain média de la queue
+        if (queue.length > 0) {
+          playNext()
+        }
+      }
     }
     const handlePlay = () => {
       console.log('Video play event fired')
@@ -432,7 +466,7 @@ const PlayerBarFull: React.FC = () => {
       video.removeEventListener('pause', handlePause)
       video.removeEventListener('error', handleError)
     }
-  }, [currentlyPlaying, isPlaying, volume, updateTime, updateDuration, updateIsPlaying])
+  }, [currentlyPlaying, isPlaying, volume, updateTime, updateDuration, updateIsPlaying, repeatMode, queue, playNext])
 
   const handleSeek = (time: number) => {
     seek(time)
@@ -598,6 +632,7 @@ const PlayerBarFull: React.FC = () => {
     gap: theme.spacing.xs,
     flex: 1,
     maxWidth: '722px',
+    minWidth: 0,
   }
 
   const controlsRowStyle: React.CSSProperties = {
@@ -854,6 +889,28 @@ const PlayerBarFull: React.FC = () => {
             </div>
             <span style={timeStyle}>{formatTime(duration)}</span>
           </div>
+          {/* Égaliseur graphique - côté droit du centre */}
+          {currentlyPlaying.type === 'audio' && audioRef.current && (
+            <div style={{
+              position: 'absolute',
+              left: '100%',
+              marginLeft: theme.spacing.lg,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              zIndex: 1,
+            }}>
+              <AudioVisualizer
+                audioElement={audioRef.current}
+                audioContext={audioContextRef.current}
+                isPlaying={isPlaying}
+                width={300}
+                height={60}
+                barCount={30}
+              />
+            </div>
+          )}
         </div>
 
         {/* Section droite - Contrôles supplémentaires */}
@@ -865,8 +922,12 @@ const PlayerBarFull: React.FC = () => {
             🎤
           </button>
           <button
-            style={controlButtonStyle}
-            title="File d'attente"
+            style={{
+              ...controlButtonStyle,
+              color: queue.length > 0 ? theme.colors.primary : theme.colors.textSecondary,
+            }}
+            onClick={() => setShowQueueModal(true)}
+            title={`File d'attente (${queue.length})`}
           >
             ☰
           </button>
@@ -1088,6 +1149,263 @@ const PlayerBarFull: React.FC = () => {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Modal Liste d'attente */}
+      {showQueueModal && (
+        <Modal
+          isOpen={showQueueModal}
+          onClose={() => setShowQueueModal(false)}
+          title={`Liste d'attente (${queue.length})`}
+          size="md"
+        >
+          {queue.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: theme.spacing['2xl'],
+              color: theme.colors.textSecondary 
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: theme.spacing.md }}>📋</div>
+              <p>La liste d'attente est vide</p>
+              <p style={{ fontSize: theme.fontSizes.sm, color: theme.colors.textTertiary, marginTop: theme.spacing.sm }}>
+                Ajoutez des médias à la liste d'attente pour les voir apparaître ici
+              </p>
+            </div>
+          ) : (
+            <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+              {queue.map((media, index) => (
+                <div
+                  key={media.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: theme.spacing.md,
+                    padding: theme.spacing.md,
+                    marginBottom: theme.spacing.xs,
+                    backgroundColor: theme.colors.bgSecondary,
+                    borderRadius: theme.borderRadius.md,
+                    border: `1px solid ${theme.colors.borderPrimary}`,
+                    cursor: 'pointer',
+                    transition: theme.transitions.base,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.colors.bgTertiary
+                    e.currentTarget.style.borderColor = theme.colors.primary
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.colors.bgSecondary
+                    e.currentTarget.style.borderColor = theme.colors.borderPrimary
+                  }}
+                >
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: theme.borderRadius.sm,
+                    backgroundColor: theme.colors.bgTertiary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: theme.fontSizes.xl,
+                    flexShrink: 0,
+                  }}>
+                    {media.thumbnail_url ? (
+                      <img
+                        src={media.thumbnail_url}
+                        alt={media.title}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: theme.borderRadius.sm,
+                        }}
+                      />
+                    ) : (
+                      media.type === 'music' ? '🎵' : '🎬'
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: theme.fontSizes.base,
+                      fontWeight: 600,
+                      color: theme.colors.textPrimary,
+                      marginBottom: theme.spacing.xs / 2,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {media.title}
+                    </div>
+                    {media.artist && (
+                      <div style={{
+                        fontSize: theme.fontSizes.sm,
+                        color: theme.colors.textSecondary,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {media.artist}
+                      </div>
+                    )}
+                    {media.duration && (
+                      <div style={{
+                        fontSize: theme.fontSizes.xs,
+                        color: theme.colors.textTertiary,
+                        marginTop: theme.spacing.xs / 2,
+                      }}>
+                        {formatTime(media.duration)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        play(media)
+                        // Retirer le média de la queue s'il est joué
+                        removeFromQueue(media.id)
+                      }}
+                      style={{
+                        backgroundColor: theme.colors.primary,
+                        border: 'none',
+                        color: theme.colors.textInverse,
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: theme.borderRadius.md,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: theme.fontSizes.base,
+                        transition: theme.transitions.base,
+                      }}
+                      title="Jouer maintenant"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.1)'
+                        e.currentTarget.style.boxShadow = theme.shadows.glow
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      ▶
+                    </button>
+                    {isAuthenticated && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedMediaId(media.id)
+                          setShowAddToPlaylistModal(true)
+                        }}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: `1px solid ${theme.colors.borderPrimary}`,
+                          color: theme.colors.textPrimary,
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: theme.borderRadius.md,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: theme.fontSizes.base,
+                          transition: theme.transitions.base,
+                        }}
+                        title="Ajouter à une playlist"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = theme.colors.primary
+                          e.currentTarget.style.borderColor = theme.colors.primary
+                          e.currentTarget.style.color = theme.colors.textInverse
+                          e.currentTarget.style.boxShadow = theme.shadows.glow
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                          e.currentTarget.style.borderColor = theme.colors.borderPrimary
+                          e.currentTarget.style.color = theme.colors.textPrimary
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                      >
+                        📋
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeFromQueue(media.id)
+                      }}
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: `1px solid ${theme.colors.borderPrimary}`,
+                        color: theme.colors.textSecondary,
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: theme.borderRadius.md,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: theme.fontSizes.base,
+                        transition: theme.transitions.base,
+                      }}
+                      title="Retirer de la liste"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.colors.error
+                        e.currentTarget.style.borderColor = theme.colors.error
+                        e.currentTarget.style.color = theme.colors.textInverse
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.borderColor = theme.colors.borderPrimary
+                        e.currentTarget.style.color = theme.colors.textSecondary
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {queue.length > 0 && (
+                <div style={{ 
+                  marginTop: theme.spacing.md, 
+                  paddingTop: theme.spacing.md,
+                  borderTop: `1px solid ${theme.colors.borderPrimary}`,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm('Voulez-vous vraiment vider la liste d\'attente ?')) {
+                        clearQueue()
+                      }
+                    }}
+                    style={{
+                      color: theme.colors.error,
+                      borderColor: theme.colors.error,
+                    }}
+                  >
+                    Vider la liste
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* Modal Ajouter à une playlist */}
+      {showAddToPlaylistModal && selectedMediaId && (
+        <AddToPlaylistModal
+          mediaId={selectedMediaId}
+          onClose={() => {
+            setShowAddToPlaylistModal(false)
+            setSelectedMediaId(null)
+          }}
+          onSuccess={() => {
+            // Optionnel : afficher un message de succès
+          }}
+        />
       )}
     </CarModeOverlay>
   )

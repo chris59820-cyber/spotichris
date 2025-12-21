@@ -1,0 +1,39 @@
+[
+  {
+    "title": "Bohemian Rhapsody",
+    "description": "One of the greatest rock songs of all time",
+    "artist": "Queen",
+    "album": "A Night at the Opera",
+    "duration": 355,
+    "type": "music",
+    "url": "https://example.com/audio/bohemian-rhapsody.mp3",
+    "thumbnail_url": "https://example.com/images/queen-a-night-at-opera.jpg"
+  },
+  {
+    "title": "Stairway to Heaven",
+    "description": "Classic rock masterpiece",
+    "artist": "Led Zeppelin",
+    "album": "Led Zeppelin IV",
+    "duration": 482,
+    "type": "music",
+    "url": "https://example.com/audio/stairway-to-heaven.mp3",
+    "thumbnail_url": "https://example.com/images/led-zeppelin-iv.jpg"
+  },
+  {
+    "title": "The Matrix",
+    "description": "A computer hacker learns about the true nature of reality",
+    "duration": 8160,
+    "type": "video",
+    "url": "https://example.com/video/matrix.mp4",
+    "thumbnail_url": "https://example.com/images/matrix.jpg"
+  },
+  {
+    "title": "Inception",
+    "description": "A thief enters peoples dreams to steal secrets",
+    "duration": 8880,
+    "type": "video",
+    "url": "https://example.com/video/inception.mp4",
+    "thumbnail_url": "https://example.com/images/inception.jpg"
+  }
+]
+

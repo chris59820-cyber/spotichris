@@ -176,3 +176,8 @@ Intégration avec les enceintes connectées et systèmes de diffusion (Chromecas
 5. **Commandes vocales** : Ajouter le support des commandes vocales pour le mode voiture
 6. **Presets personnalisés** : Permettre aux utilisateurs de créer et sauvegarder leurs propres presets d'égaliseur
 
+
+
+
+
+

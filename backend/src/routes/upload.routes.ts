@@ -8,3 +8,8 @@ export const uploadRoutes = Router()
 // Route pour uploader un fichier
 uploadRoutes.post('/', authenticateToken, uploadMedia, uploadFile)
 
+
+
+
+
+

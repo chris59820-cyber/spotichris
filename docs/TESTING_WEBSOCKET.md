@@ -226,3 +226,8 @@ Les logs doivent afficher :
 
 Une fois tous les tests passés, le WebSocket est correctement configuré et fonctionnel. Vous pouvez maintenant utiliser la synchronisation temps réel entre l'application web et les applications natives CarPlay/Android Auto.
 
+
+
+
+
+

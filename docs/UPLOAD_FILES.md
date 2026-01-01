@@ -256,3 +256,8 @@ ffprobe -i fichier.mp3 -show_entries format=duration -v quiet -of csv="p=0"
 - La limite est de 500 MB par fichier
 - Pour des fichiers plus gros, augmentez la limite dans `backend/src/config/upload.ts`
 
+
+
+
+
+

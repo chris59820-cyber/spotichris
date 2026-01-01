@@ -41,3 +41,8 @@ playlistRoutes.delete('/:id/media/:mediaId', removeMediaFromPlaylist)
 // Réorganiser les médias dans une playlist
 playlistRoutes.put('/:id/reorder', reorderMediaInPlaylist)
 
+
+
+
+
+

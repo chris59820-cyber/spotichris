@@ -65,3 +65,8 @@ L'application charge l'application web React via WebView et synchronise l'état 
 - `androidx.media3:media3-session` - Pour Android Auto
 - `androidx.appcompat:appcompat` - Support des fonctionnalités Android modernes
 
+
+
+
+
+

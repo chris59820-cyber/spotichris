@@ -19,3 +19,8 @@ favoritesRoutes.get('/', getUserFavorites)
 // Récupérer les statuts favoris pour plusieurs médias
 favoritesRoutes.get('/status/batch', getFavoriteStatuses)
 
+
+
+
+
+

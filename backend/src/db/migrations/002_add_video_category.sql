@@ -9,3 +9,8 @@ ALTER TABLE media ADD CONSTRAINT media_video_category_check
 -- Create index for video category filtering
 CREATE INDEX IF NOT EXISTS idx_media_video_category ON media(video_category);
 
+
+
+
+
+

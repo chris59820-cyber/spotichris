@@ -289,3 +289,8 @@ Pour les médias de type `music`, vous devez fournir un artiste.
 - Vérifiez que les URLs sont correctes (pas d'erreurs 404)
 - Vérifiez les logs du backend pour les erreurs de chargement
 
+
+
+
+
+

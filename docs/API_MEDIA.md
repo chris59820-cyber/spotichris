@@ -175,3 +175,8 @@ curl -X POST http://localhost:3000/api/media \
 - La pagination utilise `limit` et `offset` pour un contrôle précis
 - Les résultats sont triés par date de création (plus récent en premier)
 
+
+
+
+
+

@@ -188,3 +188,8 @@ Une fois les applications installées et testées :
 
 Voir `docs/CARPLAY_ANDROID_AUTO.md` pour plus de détails sur l'architecture.
 
+
+
+
+
+

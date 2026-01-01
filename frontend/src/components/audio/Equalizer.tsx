@@ -195,3 +195,8 @@ const Equalizer: React.FC<EqualizerProps> = ({
 
 export default Equalizer
 
+
+
+
+
+

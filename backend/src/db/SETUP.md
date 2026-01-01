@@ -151,3 +151,8 @@ CREATE DATABASE spotichris;
 
 Puis réexécutez `npm run db:init`
 
+
+
+
+
+

@@ -9,3 +9,8 @@ ALTER TABLE media ADD CONSTRAINT media_music_category_check
 -- Create index for music category filtering
 CREATE INDEX IF NOT EXISTS idx_media_music_category ON media(music_category);
 
+
+
+
+
+

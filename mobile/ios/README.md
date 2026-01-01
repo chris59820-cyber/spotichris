@@ -58,3 +58,8 @@ L'application charge l'application web React via WebView et synchronise l'état 
 - Pour la production, changer l'URL vers l'URL de production
 - CarPlay nécessite une certification Apple
 
+
+
+
+
+

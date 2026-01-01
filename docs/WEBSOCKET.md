@@ -199,3 +199,8 @@ Retourne l'état de lecture actuel depuis le cache WebSocket.
 - Les états de lecture sont isolés par utilisateur
 - Validation des commandes côté serveur
 
+
+
+
+
+

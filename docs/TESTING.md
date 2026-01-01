@@ -141,3 +141,8 @@ Dans la PlayerBar (barre en bas de l'écran) :
 4. Tester l'historique de lecture
 5. Tester avec plusieurs utilisateurs
 
+
+
+
+
+

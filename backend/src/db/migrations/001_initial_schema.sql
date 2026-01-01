@@ -79,3 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_user_media_media_id ON user_media(media_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_media_id ON sessions(media_id);
 
+
+
+
+
+

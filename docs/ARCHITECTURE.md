@@ -75,3 +75,8 @@ backend/
 4. **Cache** : Redis peut être utilisé pour mettre en cache les données fréquemment accédées
 5. **Streaming** : Les médias sont servis via des URLs générées par le backend (intégration future avec services cloud)
 
+
+
+
+
+

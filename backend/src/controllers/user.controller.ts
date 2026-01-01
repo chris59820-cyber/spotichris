@@ -46,3 +46,8 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   }
 }
 
+
+
+
+
+

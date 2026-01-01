@@ -212,3 +212,8 @@ Backend → WebSocket → WebView (React) → MainViewController → CarPlayMana
 - [CarPlay Programming Guide](https://developer.apple.com/documentation/carplay)
 - [MediaPlayer Framework](https://developer.apple.com/documentation/mediaplayer)
 
+
+
+
+
+

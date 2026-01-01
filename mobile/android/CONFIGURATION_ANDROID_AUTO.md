@@ -213,3 +213,8 @@ Android Auto nécessite généralement un appareil réel. Certains émulateurs p
 - [MediaBrowserService Guide](https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice)
 - [MediaSession API](https://developer.android.com/reference/android/media/session/MediaSession)
 
+
+
+
+
+

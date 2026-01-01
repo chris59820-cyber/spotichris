@@ -65,3 +65,8 @@ src/
 
 L'application utilise un thème cyberpunk avec support du mode sombre. Les couleurs principales sont définies dans `src/styles/theme.ts`.
 
+
+
+
+
+

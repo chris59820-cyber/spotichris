@@ -289,3 +289,8 @@ Après avoir vérifié que la synchronisation fonctionne :
 - [Documentation Android Auto](mobile/android/CONFIGURATION_ANDROID_AUTO.md)
 - [Documentation Test WebSocket](docs/TESTING_WEBSOCKET.md)
 
+
+
+
+
+

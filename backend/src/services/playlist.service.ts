@@ -1,6 +1,6 @@
-import { PlaylistModel, Playlist, CreatePlaylistData } from '../models/Playlist.model'
-import { PlaylistItemModel } from '../models/PlaylistItem.model'
-import { NotFoundError, ValidationError } from '../utils/errors'
+import { PlaylistModel, Playlist, CreatePlaylistData } from '../models/Playlist.model.js'
+import { PlaylistItemModel } from '../models/PlaylistItem.model.js'
+import { NotFoundError, ValidationError } from '../utils/errors.js'
 
 export interface PlaylistWithItems extends Playlist {
   items?: any[]

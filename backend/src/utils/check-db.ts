@@ -1,4 +1,4 @@
-import pool from '../config/database'
+import pool from '../config/database.js'
 
 /**
  * Vérifie que la base de données est accessible et que les tables existent

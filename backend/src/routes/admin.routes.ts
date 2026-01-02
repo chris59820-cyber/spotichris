@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { authenticateToken } from '../middleware/auth.middleware'
-import { MediaModel } from '../models/media.model'
+import { authenticateToken } from '../middleware/auth.middleware.js'
+import { MediaModel } from '../models/Media.model.js'
 
 export const adminRoutes = Router()
 

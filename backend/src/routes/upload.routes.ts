@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { uploadFile } from '../controllers/upload.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
-import { uploadMedia } from '../config/upload'
+import { uploadFile } from '../controllers/upload.controller.js'
+import { authenticateToken } from '../middleware/auth.middleware.js'
+import { uploadMedia } from '../config/upload.js'
 
 export const uploadRoutes = Router()
 

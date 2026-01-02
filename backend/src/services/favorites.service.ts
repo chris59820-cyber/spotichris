@@ -1,5 +1,4 @@
-import { UserMediaModel } from '../models/UserMedia.model'
-import { NotFoundError } from '../utils/errors'
+import { UserMediaModel } from '../models/UserMedia.model.js'
 
 export class FavoritesService {
   /**

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import multer from 'multer'
-import { MediaService } from '../services/media.service'
-import { ValidationError } from '../utils/errors'
+import { MediaService } from '../services/media.service.js'
+import { ValidationError } from '../utils/errors.js'
 
 const mediaService = new MediaService()
 

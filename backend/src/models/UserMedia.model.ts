@@ -1,4 +1,4 @@
-import pool from '../config/database'
+import pool from '../config/database.js'
 
 export interface UserMedia {
   id: number
@@ -75,7 +75,14 @@ export class UserMediaModel {
          RETURNING *`,
         [userId, mediaId]
       )
+      if (!result.rows[0]) {
+        throw new Error('Failed to update user_media')
+      }
       userMedia = result.rows[0]
+    }
+
+    if (!userMedia) {
+      throw new Error('Failed to get user_media')
     }
 
     return userMedia

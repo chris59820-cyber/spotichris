@@ -70,7 +70,7 @@ app.get('/health', (_req, res) => {
 })
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err)
   
   // Gestion spécifique des erreurs Multer

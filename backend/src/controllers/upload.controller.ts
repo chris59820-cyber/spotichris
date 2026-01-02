@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
-import { uploadMedia, getPublicUrl } from '../config/upload'
-import { authenticateToken } from '../middleware/auth.middleware'
+import { getPublicUrl } from '../config/upload.js'
 
 /**
  * Upload un fichier média et retourne l'URL publique

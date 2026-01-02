@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { toggleFavorite, getFavoriteStatus, getUserFavorites, getFavoriteStatuses } from '../controllers/favorites.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
+import { toggleFavorite, getFavoriteStatus, getUserFavorites, getFavoriteStatuses } from '../controllers/favorites.controller.js'
+import { authenticateToken } from '../middleware/auth.middleware.js'
 
 export const favoritesRoutes = Router()
 

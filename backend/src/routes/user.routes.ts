@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { getCurrentUser, updateUser } from '../controllers/user.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
+import { getCurrentUser, updateUser } from '../controllers/user.controller.js'
+import { authenticateToken } from '../middleware/auth.middleware.js'
 
 export const userRoutes = Router()
 

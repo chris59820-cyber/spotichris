@@ -3,7 +3,7 @@
  * Usage: tsx src/db/scripts/fix-passwords.ts
  */
 
-import pool from '../../config/database'
+import pool from '../../config/database.js'
 import bcrypt from 'bcryptjs'
 
 async function fixPasswords() {

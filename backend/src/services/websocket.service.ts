@@ -1,5 +1,5 @@
 import { Server as SocketIOServer, Socket } from 'socket.io'
-import { verifyToken } from '../config/jwt'
+import { verifyToken } from '../config/jwt.js'
 
 export interface PlaybackState {
   userId: number

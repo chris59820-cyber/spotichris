@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs'
 import jwt, { SignOptions } from 'jsonwebtoken'
-import { UserModel, CreateUserData } from '../models/User.model'
-import { JWT_CONFIG } from '../config/jwt'
-import { AuthenticationError, ValidationError } from '../utils/errors'
+import { UserModel, CreateUserData } from '../models/User.model.js'
+import { JWT_CONFIG } from '../config/jwt.js'
+import { AuthenticationError, ValidationError } from '../utils/errors.js'
 
 export interface LoginCredentials {
   email: string

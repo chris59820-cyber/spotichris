@@ -1,4 +1,4 @@
-import pool from '../config/database'
+import pool from '../config/database.js'
 
 export type MediaType = 'music' | 'video'
 
@@ -30,6 +30,7 @@ export interface CreateMediaData {
   description?: string
   artist?: string
   album?: string
+  music_category?: string | null
   duration?: number
   type: MediaType
   url?: string

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { JWT_CONFIG } from '../config/jwt'
-import { AuthenticationError } from '../utils/errors'
+import { JWT_CONFIG } from '../config/jwt.js'
 
 export interface AuthRequest extends Request {
   userId?: number

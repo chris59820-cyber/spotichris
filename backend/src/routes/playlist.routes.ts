@@ -8,8 +8,8 @@ import {
   addMediaToPlaylist,
   removeMediaFromPlaylist,
   reorderMediaInPlaylist,
-} from '../controllers/playlist.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
+} from '../controllers/playlist.controller.js'
+import { authenticateToken } from '../middleware/auth.middleware.js'
 
 export const playlistRoutes = Router()
 

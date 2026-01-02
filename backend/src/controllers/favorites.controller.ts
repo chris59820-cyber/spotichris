@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import { FavoritesService } from '../services/favorites.service'
-import { ValidationError } from '../utils/errors'
+import { FavoritesService } from '../services/favorites.service.js'
+import { ValidationError } from '../utils/errors.js'
 
 const favoritesService = new FavoritesService()
 

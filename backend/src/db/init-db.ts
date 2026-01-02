@@ -1,4 +1,4 @@
-import pool from '../config/database'
+import pool from '../config/database.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -50,7 +50,6 @@ async function initDatabase() {
     
     for (let i = 0; i < cleanSQL.length; i++) {
       const char = cleanSQL[i]
-      const nextChar = cleanSQL[i + 1]
       
       // Track if we're inside quoted strings
       if ((char === '"' || char === "'") && (i === 0 || cleanSQL[i - 1] !== '\\')) {
@@ -94,7 +93,7 @@ async function initDatabase() {
             !error.message.includes('already exists') &&
             !error.message.includes('violates foreign key') &&
             !error.message.includes('relation already exists') &&
-            !error.code === '23505' // unique_violation
+            (error as any)?.code === '23505' // unique_violation
           ) {
             console.warn(`⚠️  Warning executing statement ${i + 1}: ${error.message.substring(0, 150)}`)
             if (process.env.NODE_ENV === 'development') {

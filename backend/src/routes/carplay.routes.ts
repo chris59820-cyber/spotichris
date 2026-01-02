@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
-import { authenticateToken } from '../middleware/auth.middleware'
-import { webSocketService } from '../services/websocket.service'
+import { authenticateToken } from '../middleware/auth.middleware.js'
+import { webSocketService } from '../services/websocket.service.js'
 
 const router = Router()
 
@@ -44,7 +44,7 @@ router.get('/now-playing', authenticateToken, async (req: Request, res: Response
  * GET /api/carplay/queue
  * Retourne la file d'attente de lecture
  */
-router.get('/queue', authenticateToken, async (req: Request, res: Response) => {
+router.get('/queue', authenticateToken, async (_req: Request, res: Response) => {
   try {
     // TODO: Récupérer la file d'attente depuis la session utilisateur
     return res.json({

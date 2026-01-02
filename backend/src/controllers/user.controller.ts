@@ -1,7 +1,7 @@
 import { Response } from 'express'
-import { AuthRequest } from '../middleware/auth.middleware'
-import { UserModel } from '../models/User.model'
-import { NotFoundError } from '../utils/errors'
+import { AuthRequest } from '../middleware/auth.middleware.js'
+import { UserModel } from '../models/User.model.js'
+import { NotFoundError } from '../utils/errors.js'
 
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {

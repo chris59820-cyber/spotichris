@@ -1,5 +1,5 @@
-import { MediaModel, Media, CreateMediaData, UpdateMediaData } from '../models/Media.model'
-import { NotFoundError } from '../utils/errors'
+import { MediaModel, Media, CreateMediaData, UpdateMediaData } from '../models/Media.model.js'
+import { NotFoundError } from '../utils/errors.js'
 
 export interface MediaQueryParams {
   type?: 'music' | 'video'

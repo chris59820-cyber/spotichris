@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import { PlaylistService } from '../services/playlist.service'
-import { ValidationError, NotFoundError } from '../utils/errors'
+import { PlaylistService } from '../services/playlist.service.js'
+import { ValidationError } from '../utils/errors.js'
 
 const playlistService = new PlaylistService()
 

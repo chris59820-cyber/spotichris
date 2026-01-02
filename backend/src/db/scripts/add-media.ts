@@ -9,8 +9,8 @@
  *   tsx src/db/scripts/add-media.ts --file media-list.json
  */
 
-import pool from '../../config/database'
-import { MediaModel, MediaType } from '../../models/Media.model'
+import pool from '../../config/database.js'
+import { MediaModel, MediaType } from '../../models/Media.model.js'
 import fs from 'fs'
 import path from 'path'
 

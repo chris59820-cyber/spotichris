@@ -6,8 +6,8 @@
  *   tsx src/db/scripts/add-media-local.ts video "Titre" "Description" 3600 "./video.mp4" "./thumbnail.jpg"
  */
 
-import pool from '../../config/database'
-import { MediaModel } from '../../models/Media.model'
+import pool from '../../config/database.js'
+import { MediaModel } from '../../models/Media.model.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'

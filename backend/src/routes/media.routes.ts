@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { getAllMedia, getMediaById, createMedia, updateMedia, deleteMedia } from '../controllers/media.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
-import { uploadMedia } from '../config/upload'
+import { getAllMedia, getMediaById, createMedia, updateMedia, deleteMedia } from '../controllers/media.controller.js'
+import { authenticateToken } from '../middleware/auth.middleware.js'
+import { uploadMedia } from '../config/upload.js'
 
 export const mediaRoutes = Router()
 

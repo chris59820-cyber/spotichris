@@ -3,17 +3,17 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import multer from 'multer'
 import { createServer } from 'http'
-import { authRoutes } from './routes/auth.routes'
-import { userRoutes } from './routes/user.routes'
-import { searchRoutes } from './routes/search.routes'
-import { mediaRoutes } from './routes/media.routes'
-import { uploadRoutes } from './routes/upload.routes'
-import { favoritesRoutes } from './routes/favorites.routes'
-import { playlistRoutes } from './routes/playlist.routes'
-import carplayRoutes from './routes/carplay.routes'
-import { adminRoutes } from './routes/admin.routes'
-import { checkDatabaseSetup } from './utils/check-db'
-import { webSocketService } from './services/websocket.service'
+import { authRoutes } from './routes/auth.routes.js'
+import { userRoutes } from './routes/user.routes.js'
+import { searchRoutes } from './routes/search.routes.js'
+import { mediaRoutes } from './routes/media.routes.js'
+import { uploadRoutes } from './routes/upload.routes.js'
+import { favoritesRoutes } from './routes/favorites.routes.js'
+import { playlistRoutes } from './routes/playlist.routes.js'
+import carplayRoutes from './routes/carplay.routes.js'
+import { adminRoutes } from './routes/admin.routes.js'
+import { checkDatabaseSetup } from './utils/check-db.js'
+import { webSocketService } from './services/websocket.service.js'
 
 dotenv.config()
 
@@ -65,8 +65,8 @@ app.use('/api/carplay', carplayRoutes)
 app.use('/api/admin', adminRoutes)
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+app.get('/health', (_req, res) => {
+  return res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
 // Error handling middleware
@@ -98,7 +98,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   }
   
   // Erreur générique
-  res.status(err.status || err.statusCode || 500).json({
+  return res.status(err.status || err.statusCode || 500).json({
     message: err.message || 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })

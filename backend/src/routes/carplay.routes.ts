@@ -24,7 +24,7 @@ router.get('/now-playing', authenticateToken, async (req: Request, res: Response
       })
     }
 
-    res.json({
+    return res.json({
       title: playbackState.mediaTitle || '',
       artist: playbackState.mediaArtist || '',
       album: playbackState.mediaAlbum || '',
@@ -36,7 +36,7 @@ router.get('/now-playing', authenticateToken, async (req: Request, res: Response
     })
   } catch (error: any) {
     console.error('Error getting now playing:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 })
 
@@ -47,13 +47,13 @@ router.get('/now-playing', authenticateToken, async (req: Request, res: Response
 router.get('/queue', authenticateToken, async (req: Request, res: Response) => {
   try {
     // TODO: Récupérer la file d'attente depuis la session utilisateur
-    res.json({
+    return res.json({
       items: [],
       currentIndex: 0,
     })
   } catch (error: any) {
     console.error('Error getting queue:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 })
 
@@ -76,13 +76,13 @@ router.post('/control', authenticateToken, async (req: Request, res: Response) =
       value,
     })
 
-    res.json({
+    return res.json({
       success: true,
       message: `Commande ${command} envoyée`,
     })
   } catch (error: any) {
     console.error('Error executing control command:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 })
 

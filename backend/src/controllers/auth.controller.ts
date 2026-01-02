@@ -13,7 +13,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const result = await authService.register({ email, password, username })
-    res.status(201).json(result)
+    return res.status(201).json(result)
   } catch (error: any) {
     console.error('Register error:', error)
     
@@ -39,7 +39,7 @@ export const register = async (req: Request, res: Response) => {
       ? `Internal server error: ${error.message}`
       : 'Internal server error'
       
-    res.status(500).json({ message })
+    return res.status(500).json({ message })
   }
 }
 
@@ -52,7 +52,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const result = await authService.login({ email, password })
-    res.json(result)
+    return res.json(result)
   } catch (error: any) {
     console.error('Login error:', error)
     
@@ -78,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
       ? `Internal server error: ${error.message}`
       : 'Internal server error'
       
-    res.status(500).json({ message })
+    return res.status(500).json({ message })
   }
 }
 
@@ -91,12 +91,12 @@ export const refresh = async (req: Request, res: Response) => {
     }
 
     const token = await authService.refreshAccessToken(refreshToken)
-    res.json({ token })
+    return res.json({ token })
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 

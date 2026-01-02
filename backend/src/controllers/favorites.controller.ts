@@ -17,13 +17,13 @@ export const toggleFavorite = async (req: Request, res: Response) => {
     }
 
     const result = await favoritesService.toggleFavorite(userId, mediaId)
-    res.json(result)
+    return res.json(result)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error toggling favorite:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -40,13 +40,13 @@ export const getFavoriteStatus = async (req: Request, res: Response) => {
     }
 
     const result = await favoritesService.getFavoriteStatus(userId, mediaId)
-    res.json(result)
+    return res.json(result)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error getting favorite status:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -58,13 +58,13 @@ export const getUserFavorites = async (req: Request, res: Response) => {
     }
 
     const favorites = await favoritesService.getUserFavorites(userId)
-    res.json({ data: favorites })
+    return res.json({ data: favorites })
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error getting user favorites:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -89,13 +89,13 @@ export const getFavoriteStatuses = async (req: Request, res: Response) => {
       result[key] = value
     })
 
-    res.json(result)
+    return res.json(result)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error getting favorite statuses:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 

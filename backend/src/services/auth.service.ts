@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import { UserModel, CreateUserData } from '../models/User.model'
 import { JWT_CONFIG } from '../config/jwt'
 import { AuthenticationError, ValidationError } from '../utils/errors'
@@ -93,15 +93,16 @@ export class AuthService {
   private generateToken(userId: number): string {
     return jwt.sign({ userId }, JWT_CONFIG.secret, {
       expiresIn: JWT_CONFIG.expiresIn,
-    })
+    } as SignOptions)
   }
 
   private generateRefreshToken(userId: number): string {
     return jwt.sign({ userId }, JWT_CONFIG.refreshSecret, {
       expiresIn: JWT_CONFIG.refreshExpiresIn,
-    })
+    } as SignOptions)
   }
 }
+
 
 
 

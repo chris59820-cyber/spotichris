@@ -15,12 +15,12 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
       throw new NotFoundError('User not found')
     }
 
-    res.json(user)
+    return res.json(user)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -37,14 +37,15 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     if (email !== undefined) updateData.email = email
 
     const user = await UserModel.update(userId, updateData)
-    res.json(user)
+    return res.json(user)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
+
 
 
 

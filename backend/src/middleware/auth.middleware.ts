@@ -22,11 +22,12 @@ export const authenticateToken = (
   try {
     const decoded = jwt.verify(token, JWT_CONFIG.secret) as { userId: number }
     req.userId = decoded.userId
-    next()
+    return next()
   } catch (error) {
     return res.status(403).json({ message: 'Invalid or expired token' })
   }
 }
+
 
 
 

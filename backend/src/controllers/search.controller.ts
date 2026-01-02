@@ -13,12 +13,13 @@ export const search = async (req: Request, res: Response) => {
 
     const searchType = type === 'music' || type === 'video' ? type : 'all'
     const results = await searchService.search(q, searchType)
-    res.json(results)
+    return res.json(results)
   } catch (error: any) {
     console.error('Search error:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
+
 
 
 

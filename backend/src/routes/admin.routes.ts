@@ -8,17 +8,18 @@ export const adminRoutes = Router()
 adminRoutes.use(authenticateToken)
 
 // Route pour récupérer tous les médias de la base de données
-adminRoutes.get('/database-media', async (req, res) => {
+adminRoutes.get('/database-media', async (_req, res) => {
   try {
     // Récupérer tous les médias de la base de données
     const media = await MediaModel.findAll(1000, 0) // Limite élevée pour récupérer tous les médias
     
-    res.json(media)
+    return res.json(media)
   } catch (error: any) {
     console.error('Error fetching database media:', error)
-    res.status(500).json({ message: 'Erreur lors de la récupération des médias' })
+    return res.status(500).json({ message: 'Erreur lors de la récupération des médias' })
   }
 })
+
 
 
 

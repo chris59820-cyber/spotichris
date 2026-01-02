@@ -1,6 +1,4 @@
-import pg from 'pg'
-
-const { Pool } = pg
+import { Pool } from 'pg'
 
 // Configuration de la base de données
 // Pour le développement, utilisez des variables d'environnement
@@ -22,7 +20,7 @@ pool.on('connect', () => {
   }
 })
 
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   console.error('❌ Unexpected error on idle client', err)
   if (process.env.NODE_ENV !== 'test') {
     process.exit(-1)
@@ -35,7 +33,7 @@ export async function testConnection(): Promise<boolean> {
     const result = await pool.query('SELECT NOW()')
     console.log('✅ Database connection test successful:', result.rows[0].now)
     return true
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Database connection test failed:', error)
     return false
   }

@@ -22,7 +22,7 @@ export const uploadFile = async (req: Request, res: Response) => {
       thumbnailUrl = getPublicUrl(thumbnail.filename, 'thumbnail')
     }
 
-    res.json({
+    return res.json({
       file_url: fileUrl,
       thumbnail_url: thumbnailUrl,
       filename: file.filename,
@@ -32,9 +32,10 @@ export const uploadFile = async (req: Request, res: Response) => {
     })
   } catch (error: any) {
     console.error('Upload error:', error)
-    res.status(500).json({ message: error.message || 'Erreur lors de l\'upload' })
+    return res.status(500).json({ message: error.message || 'Erreur lors de l\'upload' })
   }
 }
+
 
 
 

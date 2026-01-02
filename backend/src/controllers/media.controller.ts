@@ -33,13 +33,13 @@ export const getAllMedia = async (req: Request, res: Response) => {
     }
 
     const result = await mediaService.getAll(params)
-    res.json(result)
+    return res.json(result)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error fetching media:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -52,13 +52,13 @@ export const getMediaById = async (req: Request, res: Response) => {
     }
 
     const media = await mediaService.getById(id)
-    res.json(media)
+    return res.json(media)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error fetching media by id:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -136,13 +136,13 @@ export const updateMedia = async (req: Request, res: Response) => {
     if (music_category !== undefined) updateData.music_category = music_category || null
 
     const media = await mediaService.update(id, updateData)
-    res.json(media)
+    return res.json(media)
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error updating media:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -233,7 +233,7 @@ export const createMedia = async (req: Request, res: Response) => {
     }
 
     const media = await mediaService.create(mediaData)
-    res.status(201).json(media)
+    return res.status(201).json(media)
   } catch (error: any) {
     console.error('Error creating media:', error)
     
@@ -262,7 +262,7 @@ export const createMedia = async (req: Request, res: Response) => {
     }
     
     // Erreur générique
-    res.status(500).json({ 
+    return res.status(500).json({ 
       message: error.message || 'Erreur serveur lors de la création du média' 
     })
   }
@@ -333,13 +333,13 @@ export const deleteMedia = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({ message: 'Média supprimé avec succès' })
+    return res.status(200).json({ message: 'Média supprimé avec succès' })
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message })
     }
     console.error('Error deleting media:', error)
-    res.status(500).json({ message: 'Erreur serveur lors de la suppression du média' })
+    return res.status(500).json({ message: 'Erreur serveur lors de la suppression du média' })
   }
 }
 

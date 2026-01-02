@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: spotichris-postgres
+    environment:
+      POSTGRES_DB: spotichris
+      POSTGRES_USER: spotichris
+      POSTGRES_PASSWORD: spotichris_change_me
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: spotichris-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: spotichris
+      DB_USER: spotichris
+      DB_PASSWORD: spotichris_change_me
+      JWT_SECRET: change_me_jwt_1
+      JWT_REFRESH_SECRET: change_me_jwt_2
+      FRONTEND_URL: http://localhost
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://192.168.1.46:3000
+    container_name: spotichris-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  portainer_data:
+

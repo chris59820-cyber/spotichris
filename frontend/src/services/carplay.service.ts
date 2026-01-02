@@ -7,6 +7,7 @@
 
 import { io, Socket } from 'socket.io-client'
 import { MediaItem } from './media.service'
+import { WS_URL } from '../config/api'
 
 export interface PlaybackState {
   isPlaying: boolean
@@ -71,11 +72,7 @@ class CarPlayService {
       this.onStateUpdateCallback = onStateUpdate
       this.onCommandCallback = onCommand
 
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://your-domain.com'
-        : 'http://localhost:3000'
-      
-      this.socket = io(wsUrl, {
+      this.socket = io(WS_URL, {
         auth: {
           token,
         },
